@@ -28,5 +28,6 @@ setup(
         "pyteomics",
         "bokeh", 
         "colorcet", 
+        "cmocean",
         "iqplot"]
 ) 
