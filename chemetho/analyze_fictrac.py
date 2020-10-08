@@ -1555,6 +1555,8 @@ def plot_aggregate_trace(df, group_by, val_col, time_col,
 def main():
     
     # TODO: Move this documentation to a README.md in software/
+    # TODO: Provide the option to turn the svg generations off, bc they take a long time
+
     # parser = argparse.ArgumentParser(description = __doc__)
     # parser.add_argument("acq_mode", 
     #     help="The mode with which FicTrac data (.dats and .logs) were acquired. \
