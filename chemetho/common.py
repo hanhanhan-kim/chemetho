@@ -9,7 +9,6 @@ from .constants import banned_substrings
 
 # TODO: Check for dataframe object type:
 
-# TODO: Move to a more general file:
 def unconcat(concat_df, col_name="ID"):
 
     """
@@ -39,7 +38,6 @@ def unconcat(concat_df, col_name="ID"):
     return(dfs_by_ID)
 
 
-# TODO: Move to a more general file:
 def flatten_list(list_of_lists):
     
     """
@@ -60,7 +58,6 @@ def flatten_list(list_of_lists):
     return flat_list
 
 
-# TODO: Move to a more general file:
 def ban_columns_with_substrings(df, substrings=banned_substrings):
 
     """
@@ -90,7 +87,6 @@ def ban_columns_with_substrings(df, substrings=banned_substrings):
     return ok_cols
 
 
-# TODO: Move to a more general file:
 def read_csv_and_add_metadata(paths):
 
     """
@@ -127,7 +123,6 @@ def read_csv_and_add_metadata(paths):
     return(dfs)
 
 
-# TODO: Move this to a more general file:
 def search_for_paths(basepath, group_members, glob_ending="*/fictrac"):
 
     """
@@ -156,7 +151,6 @@ def search_for_paths(basepath, group_members, glob_ending="*/fictrac"):
     return sorted(new_paths)
 
 
-# TODO: Move to a more general file:
 def add_metadata_to_dfs(paths, dfs):
 
     """
@@ -198,7 +192,6 @@ def add_metadata_to_dfs(paths, dfs):
     return(dfs_with_metadata)
 
 
-# TODO: Move to a more general file:
 def regenerate_IDs(df, group_by=["date", "animal", "trial"]):
 
     """
@@ -226,7 +219,6 @@ def regenerate_IDs(df, group_by=["date", "animal", "trial"]):
     return df
 
 
-# TODO: Move to a more general file:
 def curate_by_date_animal(df, included):
 
     """
@@ -264,7 +256,6 @@ def curate_by_date_animal(df, included):
     return(concat_curated_df, n_animals)
 
 
-# TODO: Move to a more general file:
 def baseline_subtract(df, baseline_end, time_col, val_col):
     
     # TODO: Update val_col to val_cols for multiple vals:
@@ -294,7 +285,6 @@ def baseline_subtract(df, baseline_end, time_col, val_col):
     return df
 
 
-# TODO: Move to a more general file:
 def compute_z_from_subseries(series, subseries):
     
     """
@@ -317,7 +307,6 @@ def compute_z_from_subseries(series, subseries):
     return ([(val - mu) / sigma for val in series])
 
 
-# TODO: Move to a more general file:
 def compute_z_from_subdf(df, val_col, time_col, 
                          subseries_end, subseries_start=0):
     """
@@ -351,7 +340,6 @@ def compute_z_from_subdf(df, val_col, time_col,
     return df
 
 
-# TODO: Move to a more general file:
 def bw_filter(df, val_cols, order, cutoff_freq, framerate=None):
 
     """
@@ -405,7 +393,6 @@ def bw_filter(df, val_cols, order, cutoff_freq, framerate=None):
     return df_with_filtered
 
 
-# TODO: Move to a more general file:
 def aggregate_trace(df, group_by, method="mean", round_to=0, f_steps=1):
     
     """

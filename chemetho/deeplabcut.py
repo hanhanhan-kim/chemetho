@@ -11,7 +11,6 @@ from bokeh.models import Legend
 from bokeh.models.ranges import Range1d
 
 
-# 
 def plot_TrainingStats(TrainingStats, alpha=0.6, size=15, line_width=4):
     '''
     Creates a Bokeh plotting object that plots the training and test errors (without p-cutoff) of the .csv that DeepLabCut generates after evaluating the DLC network.

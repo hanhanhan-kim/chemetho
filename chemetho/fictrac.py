@@ -246,9 +246,6 @@ def process_dats(basepath, group_members,
     return df
 
 
-
-
-
 def main():
     
     # TODO: Move this documentation to a README.md in software/

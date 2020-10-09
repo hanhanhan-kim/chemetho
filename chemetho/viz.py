@@ -69,7 +69,6 @@ def get_all_cmocean_colours():
     return hexcolourmaps_dict
 
 
-# TODO: Move to a more general file:
 def load_plot_theme(p, theme=None, has_legend=False):
     
     """
