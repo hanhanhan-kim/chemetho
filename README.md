@@ -4,7 +4,7 @@ An open-source Python toolkit for analyzing and visualizing **chemical ethology*
 
 Written for analyzing the following data streams:
 
-- Behaviour from [FicTrac](https://github.com/rjdmoore/fictrac) and [Anipose](https://github.com/lambdaloop/anipose)
+- Behavior from [FicTrac](https://github.com/rjdmoore/fictrac) and [Anipose](https://github.com/lambdaloop/anipose)
 - Chemistry from photoionization detectors (PIDs) , and Shimadzu GC-MS and GC-FID instruments 
 
 Uses `Bokeh` to generate interactive plots. 
