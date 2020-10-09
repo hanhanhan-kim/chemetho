@@ -11,7 +11,15 @@ Uses `Bokeh` to generate interactive plots.
 
 This package was originally written to analyze data streams from [NOEXIIT](https://github.com/hanhanhan-kim/noexiit). In the NOEXIIT set-up, the data for FicTrac and Anipose are synchronously acquired via an external hardware trigger, and the PID data is independently streamed in parallel via a [DAQ](https://labjack.com/products/u3). 
 
+## Installation
 
+There are no current plans to upload this package to PyPI. Instead, install this package from source:
+
+```bash
+git clone https://github.com/hanhanhan-kim/chemetho.git
+cd chemetho
+pip install .
+```
 
 ## How to use
 
