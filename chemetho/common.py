@@ -1,5 +1,6 @@
 from os.path import join, commonpath
 from pathlib import Path
+from functools import reduce
 
 import pandas as pd
 import numpy as np
@@ -294,7 +295,7 @@ def compute_z_from_subseries(series, subseries):
 
     Parameters:
     -----------
-    
+    # TODO: 
     
     Returns:
     --------
@@ -436,3 +437,32 @@ def aggregate_trace(df, group_by, method="mean", round_to=0, f_steps=1):
     elif method=="median":
         median_df = grouped.median().reset_index()
         return median_df
+
+
+def merge_n_ordered(dfs, on, fill_method, truncate_on=None):
+    
+    """
+    Merge n number of ordered dataframes. 
+    
+    Parameters:
+    -----------
+    dfs: List of ordered dataframes
+    on (str): Common column across `dfs` by which to merge.
+    fill_method (str): Currently only accepts "ffill" #TODO: Add linear interpolation option
+    truncate_on (fl): Value in `on` column to which the dataframe will be truncated. 
+        If None, will not truncate values in `on` column. Default is None.
+    
+    Returns:
+    --------
+    A merged dataframe. 
+    """
+    
+    # TODO: Check that the value for truncate_on is a value within the range of the on column:
+    
+    fxn = lambda left,right: pd.merge_ordered(left,right,on=on, fill_method=fill_method)
+    reduced_df = reduce(fxn, dfs)
+    
+    if truncate_on is not None:
+        return reduced_df.loc[reduced_df[on] <= truncate_on]
+    
+    return reduced_df
