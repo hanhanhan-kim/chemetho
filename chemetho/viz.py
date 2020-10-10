@@ -109,50 +109,6 @@ def load_plot_theme(p, theme=None, has_legend=False):
         pass
 
 
-def plot_power_spectrum(freq, amp):
-
-        """
-        Plot the frequency domain on both linear and log scales. 
-        Returns a Bokeh plotting object. Does not output actual plots. 
-
-        Parameters:
-        amp (list or np array): The amplitude of the Fourier transformed data.
-        freq (list or np array): The frequency of the Fourier transformed data. 
-
-        Returns:
-        p:  A bokeh plotting object. 
-        """
-
-        title = "Frequency domain"
-        
-        # Frequency domain:
-        p1 = figure(
-                title=title,
-                width=1000,
-                height=500,
-                y_axis_label="power"
-        )
-        p1.line(
-            x=freq,
-            y=amp,
-            color="darkgray"
-        )
-        p2 = figure(
-                width=1000,
-                height=500,
-                x_axis_label="frequency (Hz)",
-                y_axis_label="log power",
-                y_axis_type="log"
-        )
-        p2.line(
-            x=freq,
-            y=amp,
-            color="darkgray"
-        )
-
-        return p1, p2
-
-
 def plot_power_spectra(df, val_cols, time_col, 
                         is_evenly_sampled=False, window=np.hanning, pad=1, 
                         cutoff_freq=None, 
@@ -222,6 +178,42 @@ def plot_power_spectra(df, val_cols, time_col,
         val_labels = [val_col.replace("_", " ") for val_col in val_cols]
 
 
+    def load_aesthetics(freq, amp):
+
+        """
+        Load aesthetics for plotting power spectra. 
+        """
+
+        title = "Frequency domain"
+        
+        # Frequency domain:
+        p1 = figure(
+                title=title,
+                width=1000,
+                height=500,
+                y_axis_label="power"
+        )
+        p1.line(
+            x=freq,
+            y=amp,
+            color="darkgray"
+        )
+        p2 = figure(
+                width=1000,
+                height=500,
+                x_axis_label="frequency (Hz)",
+                y_axis_label="log power",
+                y_axis_type="log"
+        )
+        p2.line(
+            x=freq,
+            y=amp,
+            color="darkgray"
+        )
+
+        return p1, p2
+
+
     plots = []
     for i, val_col, in enumerate(val_cols):
 
@@ -250,7 +242,7 @@ def plot_power_spectra(df, val_cols, time_col,
         
 
         # Plot:
-        p1, p2 = plot_power_spectrum(freq, amp)
+        p1, p2 = load_aesthetics(freq, amp)
 
         p1.title.text = f"power spectrum of {val_labels[i]}"
         p1.title.text_font_size = "16pt"
@@ -586,11 +578,11 @@ def plot_histograms(df, cols=None, labels=None,
                     save_path_to=None, show_plots=True): 
 
     """
-    Generate histograms for multiple FicTrac variables. 
+    Generate histograms for multiple variables. Originally written for FicTrac data.
 
     Parameters:
     -----------
-    df (DataFrame): Dataframe of FicTrac data generated from parse_dats()
+    df (DataFrame): Dataframe
 
     cols (list): List of strings specifying column names in `df`. If None, 
         uses default columns that specify real-world and 'lab' kinematic measurements. 
@@ -689,11 +681,11 @@ def plot_ecdfs(df, cols=None, labels=None,
                save_path_to=None, show_plots=True):
 
     """
-    Generate ECDFs for multiple FicTrac variables. 
+    Generate ECDFs for multiple variables. Originally written for FicTrac data.
 
     Parameters:
     -----------
-    df (DataFrame): Concatenated dataframe of FicTrac data generated from parse_dats()
+    df (DataFrame): Dataframe
 
     cols (list): List of strings specifying column names in 'df'. If None, 
         uses default columns that specify real-world and 'lab' kinematic measurements.
