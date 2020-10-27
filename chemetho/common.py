@@ -1,6 +1,7 @@
 from os.path import join, commonpath
 from pathlib import Path
 from functools import reduce
+import dateutil
 
 import pandas as pd
 import numpy as np
@@ -171,15 +172,23 @@ def add_metadata_to_dfs(paths, dfs):
 
     # TODO: How to add a check for "date -> animal -> trial -> .dat" structure? 
     
+    assert len(paths) == len(dfs), "Lengths of `paths` and `dfs` are unequal"
+    # TODO: Add check to see if `paths` and `dfs` are sorted in the same way. 
+
     dfs_with_metadata = []
     for path, df in zip(paths, dfs):
-        
-        assert len(paths) == len(dfs), "Lengths of `paths` and `dfs` are unequal"
-        # TODO: Add check to see if `paths` and `dfs` are sorted in the same way. 
 
-        date = path.split("/")[-4]
-        animal = path.split("/")[-3]
-        trial = path.split("/")[-2]
+        splitted = path.split("/")
+
+        for i, folder in enumerate(splitted):
+            try:
+                dateutil.parser.parse(folder)
+                date = path.split("/")[i]
+                animal = path.split("/")[i+1]
+                trial = path.split("/")[i+2]
+                break
+            except:
+                pass
         
         df["date"] = date
         df["animal"] = animal
