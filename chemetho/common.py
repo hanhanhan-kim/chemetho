@@ -170,19 +170,16 @@ def add_metadata_to_dfs(paths, dfs):
     """
 
     # TODO: How to add a check for "date -> animal -> trial -> .dat" structure? 
-
-    common_path = commonpath(paths)
     
     dfs_with_metadata = []
     for path, df in zip(paths, dfs):
         
         assert len(paths) == len(dfs), "Lengths of `paths` and `dfs` are unequal"
         # TODO: Add check to see if `paths` and `dfs` are sorted in the same way. 
-        
-        new_path = path.replace(f"{common_path}/", "")
-        date = new_path.split("/")[0]
-        animal = new_path.split("/")[1]
-        trial = new_path.split("/")[2]
+
+        date = path.split("/")[-4]
+        animal = path.split("/")[-3]
+        trial = path.split("/")[-2]
         
         df["date"] = date
         df["animal"] = animal
