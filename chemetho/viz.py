@@ -69,6 +69,9 @@ def get_all_cmocean_colours():
     return hexcolourmaps_dict
 
 
+cm = get_all_cmocean_colours()
+
+
 def load_plot_theme(p, theme=None, has_legend=False):
     
     """
@@ -360,8 +363,6 @@ def plot_filtered(df, val_cols, time_col,
             f"The column, {time_col}, is not in the input dataframe."
         assert (val_col in df), \
             f"The column, {val_col}, is not in the input dataframe."
-        assert ("ID" in df), \
-            f"The column 'ID' is not in in the input dataframe."
         assert ("filtered_" in val_col), \
             f"The column, {val_col}, does not begin with the 'filtered_' prefix." 
         
@@ -416,7 +417,7 @@ def plot_filtered(df, val_cols, time_col,
 def plot_trajectory(df, cmap_cols, low=0, high_percentile=95, respective=False, 
                     cmap_labels=None,
                     order=2, cutoff_freq=4, 
-                    palette = cc.CET_L16, size=2.5, alpha=0.3, 
+                    palette=cm["thermal"], size=2.5, alpha=0.3, 
                     theme=None,
                     show_start=False, 
                     save_path_to=None, show_plots=True):
@@ -511,9 +512,9 @@ def plot_trajectory(df, cmap_cols, low=0, high_percentile=95, respective=False,
         source = ColumnDataSource(df)
 
         mapper = linear_cmap(field_name=cmap_col, 
-                            palette=palette, 
-                            low=low, 
-                            high=high)
+                             palette=palette, 
+                             low=low, 
+                             high=high)
         
         p = figure(width=800,
                     height=800,
@@ -521,34 +522,119 @@ def plot_trajectory(df, cmap_cols, low=0, high_percentile=95, respective=False,
                     y_axis_label="Y (mm)")
         
         p.circle(source=source,
-                    x="X_mm",
-                    y="Y_mm",
-                    color=mapper,
-                    size=size,
-                    alpha=alpha)
+                 x="X_mm",
+                 y="Y_mm",
+                 color=mapper,
+                 size=size,
+                 alpha=alpha)
         
         if show_start == True:
             # Other options include .cross, .circle_x, and .hex:
             p.circle(x=df["X_mm"][0], 
-                        y=df["Y_mm"][0], 
-                        size=12,
-                        color="darkgray",
-                        fill_alpha=0.5)
+                     y=df["Y_mm"][0], 
+                     size=12,
+                     color="darkgray",
+                     fill_alpha=0.5)
 
         # TODO: also change colorbar labels so max has =< symbol
         color_bar = ColorBar(color_mapper=mapper['transform'], 
-                                title=cmap_labels[i],
-                                title_text_font_size="7pt",
-                                width=10,
-                                background_fill_color="#f8f5f2",
-                                location=(0,0))
+                             title=cmap_labels[i],
+                             title_text_font_size="7pt",
+                             width=10,
+                             background_fill_color="#f8f5f2",
+                             location=(0,0))
 
         p.add_layout(color_bar, "right")
-
         p.title.text_font_size = "14pt"
         p.xaxis.axis_label_text_font_size = '10pt'
         p.yaxis.axis_label_text_font_size = '10pt'
         load_plot_theme(p, theme=theme)
+
+        # Output:
+        if save_path_to is not None:
+            filename = save_path_to + f"fictrac_XY_{cmap_col}"
+            p.output_backend = "svg"
+            export_svgs(p, filename=filename + ".svg")
+            export_png(p, filename=filename + ".png")
+            output_file(filename=filename + ".html", 
+                        title=filename)
+            
+        if show_plots == True:
+            # In case this script is run in Jupyter, change output_backend 
+            # back to "canvas" for faster performance:
+            p.output_backend = "canvas"
+            show(p)
+
+        # In case show_plots is False:
+        plots.append(p)
+
+    if show_plots == False:
+        return plots
+
+
+def plot_trajectories(df, cmap_cols, low=0, high_percentile=95, respective=False, 
+                      cmap_labels=None,
+                      order=2, cutoff_freq=4, 
+                      palette=cm["thermal"], 
+                      other_palette=cm["ice"], 
+                      size=2.5, alpha=0.3, theme=None,
+                      show_start=False, 
+                      save_path_to=None, show_plots=True):
+
+    """
+
+    Parameters:
+    ------------
+    The parameters of this function are identical to `plot_trajectory`, but with the
+    following additions:
+
+    other_palette (list): A list of hexadecimal colour to be used for the other agent's colour map.
+    
+    """
+
+    assert ("other_X_mm" in df), "The column, 'other_X_mm' is not in the input dataframe"
+    assert ("other_Y_mm" in df), "The column, 'other_Y_mm' is not in the input dataframe"
+
+    # Format axes labels:
+    if cmap_labels == None:
+        cmap_labels = [cmap_col.replace("_", " ") for cmap_col in cmap_cols]
+
+    plots = plot_trajectory(df, cmap_cols, low=low, high_percentile=high_percentile, respective=False,
+                            cmap_labels=cmap_labels, 
+                            order=order, cutoff_freq=cutoff_freq, 
+                            palette=palette, size=size, alpha=alpha,
+                            theme=theme,
+                            show_start=show_start,
+                            save_path_to=save_path_to, show_plots=False) 
+
+    source = ColumnDataSource(df)   
+
+    for i,(cmap_col, p) in enumerate(zip(cmap_cols, plots)):
+
+        if respective is False:
+            high = np.percentile(df[cmap_col], high_percentile)
+
+        # Plot other agent:
+        other_mapper = linear_cmap(field_name=cmap_col, 
+                        palette=other_palette, 
+                        low=low, 
+                        high=high)
+
+        other_color_bar = ColorBar(color_mapper=other_mapper['transform'], 
+                                    title="robot " + cmap_labels[i],
+                                    title_text_font_size="7pt",
+                                    background_fill_color="#f8f5f2",
+                                    width=10,
+                                    location=(0,0))
+
+        p.add_layout(other_color_bar, "right")
+
+        p.circle(source=source,
+                    x="other_X_mm", 
+                    y="other_Y_mm", 
+                    color=other_mapper, 
+                    size=size, 
+                    alpha=alpha)
 
         # Output:
         if save_path_to is not None:
