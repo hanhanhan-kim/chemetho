@@ -250,7 +250,6 @@ def process_csvs(basepath, group_members, glob_ending="*/stimulus/*.csv"):
     return df 
 
 
-
 def curate_by_date_animal(df, included):
 
     """

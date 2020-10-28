@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-# TODO: Sym link my local into noexiit src? How to rid of path.insert?
-
 """
 Process and visualize FicTrac data with helper functions. 
 When run as a script, transforms .dat FicTrac files into a single concatenated 

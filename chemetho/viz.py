@@ -423,8 +423,8 @@ def plot_trajectory(df, cmap_cols, low=0, high_percentile=95, respective=False,
                     save_path_to=None, show_plots=True):
     
     """
-    Plot XY FicTrac coordinates of the individual with a linear colourmap for 
-    a each element in `cmap_cols`. 
+    Plot XY coordinates of the individual with a linear colourmap for a each element 
+    in `cmap_cols`. 
     
     Parameters:
     -----------
@@ -582,6 +582,8 @@ def plot_trajectories(df, cmap_cols, low=0, high_percentile=95, respective=False
                       save_path_to=None, show_plots=True):
 
     """
+    Plot XY coordinates of two agents. 
+    Plots a linear colourmap for a each element in `cmap_cols`, for both agents. 
 
     Parameters:
     ------------
