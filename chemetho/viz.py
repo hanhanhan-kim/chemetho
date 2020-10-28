@@ -488,7 +488,6 @@ def plot_trajectory(df, cmap_cols, low=0, high_percentile=95, respective=False,
     assert (low >= 0), "The low end of the colour map range must be non-negative"
     assert ("X_mm" in df), "The column, 'X_mm', is not in the input dataframe."
     assert ("Y_mm" in df), "The column, 'Y_mm', is not in the input dataframe."
-    assert ("ID" in df), "The column 'ID' is not in in the input dataframe."
   
     # Format axes labels:
     if cmap_labels == None:
@@ -537,6 +536,7 @@ def plot_trajectory(df, cmap_cols, low=0, high_percentile=95, respective=False,
                      fill_alpha=0.5)
 
         # TODO: also change colorbar labels so max has =< symbol
+        # TODO: Change background colour of colour bar, according to theme
         color_bar = ColorBar(color_mapper=mapper['transform'], 
                              title=cmap_labels[i],
                              title_text_font_size="7pt",
@@ -586,10 +586,16 @@ def plot_trajectories(df, cmap_cols, low=0, high_percentile=95, respective=False
     Parameters:
     ------------
     The parameters of this function are identical to `plot_trajectory`, but with the
-    following additions:
+    following addition:
 
     other_palette (list): A list of hexadecimal colour to be used for the other agent's colour map.
     
+    Returns:
+    ---------
+    if show_plots is True: will show plots instead of outputting bokeh.plotting.figure object.
+    if show_plots is False: will output bokeh.plotting.figure objects, instead of showing plots.
+    if save_path_to is not None: will save .png plots to specified path. 
+    if save_path_to is None: will not save plots.
     """
 
     assert ("other_X_mm" in df), "The column, 'other_X_mm' is not in the input dataframe"
@@ -620,6 +626,8 @@ def plot_trajectories(df, cmap_cols, low=0, high_percentile=95, respective=False
                         low=low, 
                         high=high)
 
+        # TODO: also change colorbar labels so max has =< symbol
+        # TODO: Change background colour of colour bar, according to theme
         other_color_bar = ColorBar(color_mapper=other_mapper['transform'], 
                                     title="robot " + cmap_labels[i],
                                     title_text_font_size="7pt",
