@@ -133,10 +133,10 @@ def search_for_paths(basepath, group_members, glob_ending="*/fictrac"):
 
     Parameters:
     -----------
-    basepath: Longest common path shared by each glob search return. 
-    group_members: List of group members. Each element must be a substring
+    basepath (str): Longest common path shared by each glob search return. 
+    group_members (list): List of group members. Each element must be a substring
         in the path to the `glob_ending` result. 
-    glob_ending: A Unix-style path ending. Supports '*' wildcards. 
+    glob_ending (str): A Unix-style path ending. Supports '*' wildcards. 
 
     Returns:
     --------
@@ -171,7 +171,6 @@ def add_metadata_to_dfs(paths, dfs):
     """
 
     # TODO: How to add a check for "date -> animal -> trial -> .dat" structure? 
-    
     assert len(paths) == len(dfs), "Lengths of `paths` and `dfs` are unequal"
     # TODO: Add check to see if `paths` and `dfs` are sorted in the same way. 
 
@@ -224,6 +223,32 @@ def regenerate_IDs(df, group_by=["date", "animal", "trial"]):
     df["ID"] = df["ID"].apply(str)
     
     return df
+
+
+def process_csvs(basepath, group_members, glob_ending="*/stimulus/*.csv"):
+
+    """
+
+    This function does not perform any filtering. 
+
+    Parameters:
+    -----------
+    basepath (str): Longest common path shared by each glob search return. 
+    group_members (list): List of group members. Each element must be a substring
+        in the path to the `glob_ending` result. 
+    glob_ending (str): A Unix-style path ending. Supports '*' wildcards. 
+
+    Returns:
+    --------
+    """
+
+    paths = search_for_paths(basepath, group_members, glob_ending=glob_ending)
+    dfs = [pd.read_csv(path) for path in paths]
+    dfs = add_metadata_to_dfs(paths, dfs)
+    df = regenerate_IDs(pd.concat(dfs))
+
+    return df 
+
 
 
 def curate_by_date_animal(df, included):
