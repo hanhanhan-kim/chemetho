@@ -3,6 +3,7 @@ from pathlib import Path
 from functools import reduce
 import dateutil
 
+from pandas.api.types import is_numeric_dtype
 import pandas as pd
 import numpy as np
 import scipy.signal as sps
@@ -226,8 +227,14 @@ def regenerate_IDs(df, group_by=["date", "animal", "trial"]):
 
 
 def process_csvs(basepath, group_members, glob_ending="*/stimulus/*.csv"):
-
+    
     """
+    Process a group of `.csv`s. Reads the `.csv`s, adds metadata from 
+    corresponding paths, concatenates dataframes, and regenerates IDs.
+
+    Assumes that there exists somewhere after the 'basepath', a directory 
+    structure that goes 'date -> animal -> trial', where 'trial' holds the 
+    `.csv` data. 
 
     This function does not perform any filtering. 
 
@@ -469,6 +476,163 @@ def aggregate_trace(df, group_by, method="mean", round_to=0, f_steps=1):
         return median_df
 
 
+def get_smaller_last_val(df_1, df_2, common_col):
+
+    """
+    Compares the last value for a column shared between two dataframes. 
+
+    Parameters:
+    ------------
+    df_1: A dataframe
+
+    df_2: A dataframe
+
+    common_col: A shared column for comparing 'df_1' against 'df_2'. 
+    
+    Returns:
+    ---------
+    The smaller value of these values as a float.  
+    """
+
+    assert(common_col in df_1 and common_col in df_2), f"df_1 and df_2 do not share {common_col}"
+    assert(is_numeric_dtype(df_1[common_col])), f"The values of {common_col} in df_1 is not numeric, e.g. float64, etc."
+    assert(is_numeric_dtype(df_2[common_col])), f"The values of {common_col} in df_1 is not numeric, e.g. float64, etc."
+
+    df_1_is_bigger = float(df_1[common_col].tail(1)) > float(df_2[common_col].tail(1))
+
+    if df_1_is_bigger is True:
+        return float(df_2[common_col].tail(1))
+    else:
+        return float(df_1[common_col].tail(1))
+
+
+def get_common_expts(df_1, df_2):
+    
+    """
+    Returns the date + animal + trial combinations common to both 'df_1' and 'df_2'. 
+    Prints out the date + animal + trial combinations unique to 'df_1' or 'df_2'. 
+    
+    Parameters:
+    -----------
+    df_1: A dataframe to be merged with 'df_2'. 
+    df_2: A dataframe to be merged with 'df_1'.
+    
+    Returns:
+    --------
+    A list of tuples, where each tuple has a condition common to both input dataframes. 
+    """
+    
+    grouped_1 = df_1.groupby(["date", "animal", "trial"])
+    grouped_2 = df_2.groupby(["date", "animal", "trial"])
+    
+    names_1 = {name for name,_ in grouped_1}
+    names_2 = {name for name,_ in grouped_2}
+    
+    in_df_1_only = names_1.difference(names_2)
+    in_df_2_only = names_2.difference(names_1)
+    
+    if len(in_df_1_only) > 0:
+        print(f"The following conditions are unique to 'df_1': {in_df_1_only} \n")
+    else:
+        print("'df_1' describes a subset of 'df_2' experiments \n")
+        
+    if len(in_df_2_only) > 0:
+        print(f"The following conditions are unique to 'df_1': {in_df_2_only} \n")
+    else:
+        print("'df_2' describes a subset of 'df_1' experiments \n")
+        
+    if len(in_df_1_only) == 0 and len(in_df_1_only) == 0:
+        print("'df_1' and 'df_2' describe identical experiments \n")
+        
+    in_both_dfs = names_1.intersection(names_2)
+    
+    return list(in_both_dfs)
+    
+
+def merge_timeseries(df_1, df_2, 
+                     common_time="secs_elapsed", 
+                     fill_method="ffill"):
+    
+    """
+    Merges, according to a common column, two ordered dataframes, e.g. timeseries. 
+    Truncates the merged dataframe by the earliest last valid input observation. 
+    Merges only those experiments (i.e. a unique date + animal + trial combo) 
+    common to both dataframes.
+
+    Parameters:
+    ----------- 
+    df_1: A time-series dataframe to be merged with 'df_2'.
+
+    df_2: A time-series dataframe to be merged with 'df_1'. 
+
+    common_time (str): A common column against which to merge the dataframes. 
+        Must be some ordered unit such as time. 
+
+    fill_method (str): Specifies how to treat NaN values upon merge. 
+        Either 'ffill' for forward fill, or 'linear' for linear interpolation. 
+        Forward fill fills the NaNs with the last valid observation, until the
+        next valid observation. Linear interpolation fits a line based on two 
+        flanking valid observations. The latter works only on columns with numeric 
+        values; non-numerics are forward-filled. 
+
+    Returns:
+    --------
+    A Pandas dataframe. 
+    """
+    
+    assert(common_time in df_1 and common_time in df_2), f"'df_1' and df_2 do not share {common_time}"
+    assert("date" in df_1), "The column, 'date' is not in 'df_1'"
+    assert("animal" in df_1), "The column, 'animal' is not in 'df_1'"
+    assert("trial" in df_1), "The column, 'trial' is not in 'df_1'"
+    assert("date" in df_1), "The column, 'date' is not in 'df_2'"
+    assert("animal" in df_1), "The column, 'animal' is not in 'df_2'"
+    assert("trial" in df_1), "The column, 'trial' is not in 'df_2'" 
+
+    if "ID" in df_1:
+        df_1.drop("ID", axis=1, inplace=True)
+    if "ID" in df_2:
+        df_2.drop("ID", axis=1, inplace=True)
+
+    # Compare df_1 vs df_2:
+    smaller_last_val = get_smaller_last_val(df_1, df_2, common_time)
+
+    if fill_method is "ffill":
+
+        # Merge df_1 with df_2:
+        merged_df = pd.merge_ordered(df_1, df_2, 
+                                     on=[common_time, "date", "animal", "trial"], 
+                                     fill_method=fill_method)
+
+        # Truncate merged with smaller of the mergees:
+        merged_df = merged_df[merged_df[common_time] < smaller_last_val]    
+    
+    elif fill_method is "linear":
+
+        # Merge df_1 with df_2:
+        merged_df = pd.merge_ordered(df_1, df_2, 
+                                     on=[common_time, "date", "animal", "trial"], 
+                                     fill_method=None)
+
+        # Truncate merged with smaller of the mergees:
+        merged_df = merged_df[merged_df[common_time] < smaller_last_val] 
+
+        # Finally interpolate:
+        merged_df = merged_df.interpolate(method=fill_method)
+
+        # Ffill any remaining non-numeric values:
+        merged_df = merged_df.ffill(axis=0)
+
+    # Extract only those data common to both input dataframes:
+    in_both_dfs = get_common_expts(df_1, df_2) 
+    grouped = merged_df.groupby(["date", "animal", "trial"])
+    common_data = [group for name,group in grouped if name in in_both_dfs]
+    common_df = pd.concat(common_data) 
+    common_df = regenerate_IDs(common_df)
+
+    return common_df
+
+
+# TODO: have this fxn wrap around my merge_timeseries() fxn! 
 def merge_n_ordered(dfs, on, fill_method, truncate_on=None):
     
     """
@@ -492,6 +656,7 @@ def merge_n_ordered(dfs, on, fill_method, truncate_on=None):
     fxn = lambda left,right: pd.merge_ordered(left,right,on=on, fill_method=fill_method)
     reduced_df = reduce(fxn, dfs)
     
+    # TODO: Here, 'truncate_on' is an argument. By calling merge_timeseries() I'll free up this param, i.e. won't have to do it: 
     if truncate_on is not None:
         return reduced_df.loc[reduced_df[on] <= truncate_on]
     

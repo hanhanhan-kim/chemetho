@@ -1,253 +1,81 @@
 #!/usr/bin/env python3
 
-"""
-Process programmatic stimuli used for NOEXIIT. 
-When run as a script, transforms .csv stimulus file into a single concatenated
-Pandas dataframe with some additional columns. Includes functions for merging
-stimulus .csvs with other dataframes, such as those from FicTrac and/or 
-DeepLabCut. 
-"""
-
 import glob 
-from os.path import isdir, join, split
+from pathlib import Path
 
-import pandas as pd
-from pandas.api.types import is_numeric_dtype
 import numpy as np
-import scipy.interpolate as spi
-
-from bokeh.io import output_file, export_png, export_svgs, show
-from bokeh.transform import linear_cmap
-from bokeh.plotting import figure
-from bokeh.models import ColorBar, ColumnDataSource, Span
-from bokeh.layouts import gridplot
-import bokeh.palettes 
-import colorcet as cc
+import scipy.interpolate as spi 
+import pandas as pd
 
 from .common import unconcat
 
 
-def get_smaller_last_val(df_1, df_2, common_col):
+def convert_noexiit_servo(df, servo_min, servo_max, servo_touch):
+    
     """
-    Compare the last value for a column shared between two dataframes. 
-    Return the smaller value of these values as a float.  
-    """
-    assert common_col in df_1 and common_col in df_2, \
-        f"df_1 and df_2 do not share {common_col}"
-    assert is_numeric_dtype(df_1[common_col]), \
-        f"The values of {common_col} in df_1 is not numeric, e.g. float64, etc."
-    assert is_numeric_dtype(df_2[common_col]), \
-        f"The values of {common_col} in df_1 is not numeric, e.g. float64, etc."
-
-    df_1_is_bigger = float(df_1[common_col].tail(1)) > float(df_2[common_col].tail(1))
-
-    if df_1_is_bigger is True:
-        return float(df_2[common_col].tail(1))
-    else:
-        return float(df_1[common_col].tail(1))
-
-
-def parse_2dof_stimulus (root, nesting, servo_min, servo_max, servo_touch):
-    """
-    Formats 2dof motor stimulus .csv file. Maps 0 to 180 linear servo angle range
-    to real distances in mm. 
-
+    Converts the NoEXIIT robot's servo commands into real distances (mm). 
+    
     Parameters:
-    -----------
-    root (str): Absolute path to the root directory. I.e. the outermost 
-        folder that houses the stimulus .csv files
-    nesting (int): Specifies the number of folders that are nested from the
-        root directory. I.e. the number of folders between root and the
-        'stimulus' subdirectory that houses the input .csv files. 
+    ------------
+    df: A dataframe
+
     servo_min (fl): The minimum linear servo extension. Must be in mm.
+
     servo_max (fl): The maximum linear servo extension. Must be in mm. 
+
     servo_touch (fl): The linear servo extension length (mm) at which the stimulus 
         touches the insect on the ball. Will often be the same as 'servo_max'. 
 
     Returns:
-    --------
+    ---------
+    A Pandas dataframe. 
     """
-    csvs = sorted(glob.glob(join(root, nesting * "*/", "stimulus/*.csv")))
     
-    for csv in csvs:
-        head = split(csv)[0]
-        assert isdir(head), \
-            f"The directory, {head}, does not exist."
-    
+    assert "Servo output (degs)" in df,  f"The column 'Servo output (degs)' is not in the dataframe, 'df'."
+
     # Generate function to map servo parameters:
-    f_servo = spi.interp1d(np.linspace(0,180), np.linspace(servo_min,servo_max))
+    f_servo = spi.interp1d(np.linspace(0,180), np.linspace(servo_min, servo_max))
 
-    dfs = []
-    for i, csv in enumerate(csvs):
-        df = pd.read_csv(csv)
-
-        assert "Servo output (degs)" in df, \
-            f"The column 'Servo output (degs)' is not in the dataframe, {df}."
-
-        # Map:
-        df["Servo output (mm)"] = f_servo(df["Servo output (degs)"])
-        # Convert to distance from stim: 
-        df["dist_from_stim_mm"] = servo_touch - df["Servo output (mm)"]
-        
-        # Assign ID number:
-        df['ID'] = str(i)
-
-        # Some of my stimulus csvs have this col instead of "secs_elapsed":
-        if "Elapsed time (s)" in df:
-            df = df.rename(columns={"Elapsed time (s)": "secs_elapsed"})
-
-        dfs.append(df)
+    # Map:
+    df["Servo output (mm)"] = f_servo(df["Servo output (degs)"])
     
-    concat_df = pd.concat(dfs)
-    return concat_df
+    # Convert to distance from stim: 
+    df["dist_from_stim_mm"] = servo_touch - df["Servo output (mm)"]
+        
+    return df
 
 
-def merge_stimulus_with_data (concat_stim, concat_df1, concat_df2=None, 
-                              common_time="secs_elapsed", fill_method="ffill"):
+def make_noexiit_trajectory(df):
+
     """
-    Merge, according to a common column, the ordered stimulus dataframe with 
-    one or two other ordered dataframes--namely, the FicTrac data and/or 
-    DeepLabCut data. Dataframes MUST be timeseries, so will be ordered by 
-    time. Fills NaN values with either a forward fill or linear interpolation, 
-    then truncates the merged dataframe by the earliest last valid observation 
-    seen across the input dataframes. 
+    Compute the NoEXIIT robot's trajectory, relative to the tethered animal.
+    
+    Assumes that the reference direction of the robot angle is parallel and 
+    co-linear to the tethered animal in real space.  
 
     Parameters:
     -----------
-    concat_stim: A concatenated time-series dataframe of the stimulus presentation,
-        e.g. output from parse_2dof_stimulus().
-    concat_df1: A time-series dataframe to be merged with 'concat_stim'. 
-        e.g. from FicTrac.
-    concat_df2: An additional time-series dataframe to be also merged with 
-        'concat_stim'. e.g. from DeepLabCut. 
-    common_time (str): A common column against which to merge the dataframes. 
-        Must be some ordered unit such as time. 
-    fill_method (str): Specifies how to treat NaN values upon merge. 
-        Either 'ffill' for forward fill, or 'linear' for linear interpolation. 
-        Forward fill fills the NaNs with the last valid observation, until the
-        next valid observation. Linear interpolation fits a line based on two 
-        flanking valid observations. The latter works only on columns with numeric 
-        values; non-numerics are forward-filled. 
-
-    Returns:
-    --------
-    A single merged dataframe consisting of the stimulus dataframe and the other
-        input dataframes. 
-    """
-    
-    # TODO: assert "ID" in all dataframes
-
-    stims_by_ID = unconcat(concat_stim)
-    df1s_by_ID = unconcat(concat_df1)
-
-    assert common_time in concat_stim and common_time in concat_df1, \
-        f"concat_stim and concat_df1 do not share {common_time}"
-    assert len(stims_by_ID) == len(df1s_by_ID), \
-        f"concat_stim and concat_df1 possess a different number of experiments."
-
-    if concat_df2 is not None:
-
-        df2s_by_ID = unconcat(concat_df2)
-
-        assert common_time in concat_stim and common_time in concat_df2, \
-            f"concat_stim and concat_df2 do not share {common_time}"
-        assert len(stims_by_ID) == len(df2s_by_ID), \
-            f"concat_stim and concat_df2 possess a different number of experiments."
-
-    merged_dfs = []
-    for i, stim_df in enumerate(stims_by_ID): 
-        
-        # Compare stim_df vs df_1:
-        smaller_last_val = get_smaller_last_val(stim_df, df1s_by_ID[i], common_time)
-
-        if fill_method is "ffill":
-            # Merge stim_df with df1:
-            merged_df = pd.merge_ordered(stim_df, df1s_by_ID[i], 
-                                         on=[common_time, "ID"], 
-                                         fill_method=fill_method)
-            # Truncate merged with smaller of the mergees:
-            merged_df = merged_df[merged_df[common_time] < smaller_last_val]    
-            
-            if concat_df2 is not None: 
-                # Compare lower of previous with df_2 and update:
-                maybe_even_smaller = get_smaller_last_val(stim_df, df2s_by_ID[i], common_time)
-                if smaller_last_val > maybe_even_smaller:
-                    smaller_last_val = maybe_even_smaller
-                # Merge stim_df+df1 with df2:
-                merged_df = pd.merge_ordered(merged_df, df2s_by_ID[i], 
-                                             on=common_time,
-                                             fill_method=fill_method)
-        
-        elif fill_method is "linear":
-            # Merge stim_df with df1:
-            merged_df = pd.merge_ordered(stim_df, df1s_by_ID[i], 
-                                         on=[common_time, "ID"], 
-                                         fill_method=None)
-            # Truncate merged with smaller of the mergees:
-            merged_df = merged_df[merged_df[common_time] < smaller_last_val] 
-            # Finally interpolate:
-            merged_df = merged_df.interpolate(method=fill_method)
-
-            if concat_df2 is not None:
-                # Compare lower of previous with df_2 and update:
-                maybe_even_smaller = get_smaller_last_val(stim_df, df2s_by_ID[i], common_time)
-                if smaller_last_val > maybe_even_smaller:
-                    smaller_last_val = maybe_even_smaller 
-                # Merge stim_df+df1 with df2:
-                merged_df = pd.merge_ordered(merged_df, df2s_by_ID[i], 
-                                             on=common_time, 
-                                             fill_method=None)
-                # Truncate merged with smaller of the mergees:
-                merged_df = merged_df[merged_df[common_time] < smaller_last_val] 
-                # Finally interpolate:
-                merged_df = merged_df.interpolate(method=fill_method)
-                
-        merged_dfs.append(merged_df)
-
-    concat_n_merged_df = pd.concat(merged_dfs)
-
-    if fill_method is "linear":
-        # Ffill any remaining non-numeric values:
-        concat_n_merged_df = concat_n_merged_df.ffill(axis=0)
-
-    return concat_n_merged_df
-
-
-def make_stimulus_trajectory(merged_df):
-    """
-    Generate stimulus trajectories from the 2DOF stimulus relative to the same 
-    frame of reference as the tethered insect's trajectory, as computed by 
-    FicTrac. Assumes that the reference direction for the stimulus angle results 
-    in the stimulus facing parallel and co-linear to the beetle in real untethered 
-    space.  
-
-    Parameters:
-    -----------
-    merged_df: A single dataframe consisting of pre-processed stimulus data 
-        merged with at least a FicTrac dataframe. 
+    df: A Pandas dataframe. 
     
     Return:
     -------
-    A single dataframe with columns for the X and Y Cartesian coordinates of the stimulus. 
+    A dataframe with the NoEXIIT robot's X and Y coordinates. 
 
     """
-    assert "X_mm" in merged_df and "Y_mm" in merged_df \
-        and "dist_from_stim_mm" in merged_df, \
-        f"The 'X_mm', 'Y_mm', and 'dist_from_stim_mm' columns are not in merged_df"
 
-    dfs_by_ID = unconcat(merged_df)
+    assert("X_mm" in df), f"The dataframe must have a column called 'X_mm'"
+    assert("Y_mm" in df), f"The dataframe must have a column called 'Y_mm'"
+    assert("dist_from_stim_mm" in df), f"The dataframe must have a column called 'dist_from_stim_mm'"
 
-    trigged_dfs = []
-    for df in dfs_by_ID:
+    def compute_X_mm(row):
+        X_mm = row["X_mm"] + (row["dist_from_stim_mm"] * np.cos(np.deg2rad(row["Stepper output (degs)"])))
+        return X_mm
 
-        df['other_X_mm'] = df.apply(lambda row: (row["X_mm"] + \
-            (row["dist_from_stim_mm"] * np.cos(np.deg2rad(row["Stepper output (degs)"])))), 
-            axis=1)
-        df['other_Y_mm'] = df.apply(lambda row: (row["Y_mm"] + \
-            (row["dist_from_stim_mm"] * np.sin(np.deg2rad(row["Stepper output (degs)"])))), 
-            axis=1)
+    def compute_Y_mm(row):
+        Y_mm = row["Y_mm"] + (row["dist_from_stim_mm"] * np.sin(np.deg2rad(row["Stepper output (degs)"])))
+        return Y_mm
+
+    df['other_X_mm'] = df.apply(compute_X_mm, axis=1)
+    df['other_Y_mm'] = df.apply(compute_Y_mm, axis=1) 
         
-        trigged_dfs.append(df)
-
-    trigged_df = pd.concat(trigged_dfs)
-    return trigged_df
+    return df
