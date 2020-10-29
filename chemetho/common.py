@@ -673,7 +673,7 @@ def merge_n_ordered(dfs, on, fill_method, truncate_on=None):
     return reduced_df
 
 
-def cut_before_1st_instance(df, col, val):
+def behead_conditionally(df, col, val):
 
     """
     Cuts the dataframe before the 1st instance of a specified value in a column.
