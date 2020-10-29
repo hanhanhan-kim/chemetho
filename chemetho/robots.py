@@ -31,16 +31,22 @@ def convert_noexiit_servo(df, servo_min, servo_max, servo_touch):
     A Pandas dataframe. 
     """
     
-    assert "Servo output (degs)" in df,  "The column 'Servo output (degs)' is not in the dataframe, 'df'."
+    if "Stepper output (degs)" in df:
+        df.rename(columns={"Stepper output (degs)": "Stepper position (deg)"}, inplace=True)
+    if "Servo output (degs)" in df:
+        df.rename(columns={"Servo output (degs)": "Servo position (deg)"}, inplace=True)
+    
+    assert("Stepper position (deg)" in df),  "The column 'Stepper position (deg)' is not in the dataframe, 'df'."
+    assert("Servo position (deg)" in df),  "The column 'Servo position (deg)' is not in the dataframe, 'df'."
 
     # Generate function to map servo parameters:
     f_servo = spi.interp1d(np.linspace(0,180), np.linspace(servo_min, servo_max))
 
     # Map:
-    df["Servo output (mm)"] = f_servo(df["Servo output (degs)"])
+    df["Servo position (mm)"] = f_servo(df["Servo position (deg)"])
     
     # Convert to distance from stim: 
-    df["dist_from_stim_mm"] = servo_touch - df["Servo output (mm)"]
+    df["dist_from_stim_mm"] = servo_touch - df["Servo position (mm)"]
         
     return df
 
@@ -67,11 +73,11 @@ def make_noexiit_trajectory(df):
     assert("dist_from_stim_mm" in df), "The dataframe must have a column called 'dist_from_stim_mm'"
 
     def compute_X_mm(row):
-        X_mm = row["X_mm"] + (row["dist_from_stim_mm"] * np.cos(np.deg2rad(row["Stepper output (degs)"])))
+        X_mm = row["X_mm"] + (row["dist_from_stim_mm"] * np.cos(np.deg2rad(row["Stepper position (deg)"])))
         return X_mm
 
     def compute_Y_mm(row):
-        Y_mm = row["Y_mm"] + (row["dist_from_stim_mm"] * np.sin(np.deg2rad(row["Stepper output (degs)"])))
+        Y_mm = row["Y_mm"] + (row["dist_from_stim_mm"] * np.sin(np.deg2rad(row["Stepper position (deg)"])))
         return Y_mm
 
     df['other_X_mm'] = df.apply(compute_X_mm, axis=1)
