@@ -8,5 +8,5 @@ VERSION = __version__
 from .common import *
 from .viz import *
 from .fictrac import *
-from .stimulus import *
+from .robots import *
 from .chemistry import *
