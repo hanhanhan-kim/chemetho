@@ -533,16 +533,15 @@ def get_common_expts(df_1, df_2):
     
     if len(in_df_1_only) > 0:
         print(f"The following conditions are unique to 'df_1': {in_df_1_only} \n")
-    else:
-        print("'df_1' describes a subset of 'df_2' experiments \n")
-        
     if len(in_df_2_only) > 0:
         print(f"The following conditions are unique to 'df_1': {in_df_2_only} \n")
-    else:
-        print("'df_2' describes a subset of 'df_1' experiments \n")
-        
+    
     if len(in_df_1_only) == 0 and len(in_df_1_only) == 0:
         print("'df_1' and 'df_2' describe identical experiments \n")
+    elif len(in_df_1_only) == 0:
+        print("'df_1' describes a subset of 'df_2' experiments \n")
+    elif len(in_df_2_only) == 0:
+        print("'df_2' describes a subset of 'df_1' experiments \n")
         
     in_both_dfs = names_1.intersection(names_2)
     
