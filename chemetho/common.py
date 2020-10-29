@@ -593,43 +593,54 @@ def merge_timeseries(df_1, df_2,
     if "ID" in df_2:
         df_2.drop("ID", axis=1, inplace=True)
 
-    # Compare df_1 vs df_2:
-    smaller_last_val = get_smaller_last_val(df_1, df_2, common_time)
-
-    if fill_method is "ffill":
-
-        # Merge df_1 with df_2:
-        merged_df = pd.merge_ordered(df_1, df_2, 
-                                     on=[common_time, "date", "animal", "trial"], 
-                                     fill_method=fill_method)
-
-        # Truncate merged with smaller of the mergees:
-        merged_df = merged_df[merged_df[common_time] < smaller_last_val]    
-    
-    elif fill_method is "linear":
-
-        # Merge df_1 with df_2:
-        merged_df = pd.merge_ordered(df_1, df_2, 
-                                     on=[common_time, "date", "animal", "trial"], 
-                                     fill_method=None)
-
-        # Truncate merged with smaller of the mergees:
-        merged_df = merged_df[merged_df[common_time] < smaller_last_val] 
-
-        # Finally interpolate:
-        merged_df = merged_df.interpolate(method=fill_method)
-
-        # Ffill any remaining non-numeric values:
-        merged_df = merged_df.ffill(axis=0)
-
     # Extract only those data common to both input dataframes:
-    in_both_dfs = get_common_expts(df_1, df_2) 
-    grouped = merged_df.groupby(["date", "animal", "trial"])
-    common_data = [group for name,group in grouped if name in in_both_dfs]
-    common_df = pd.concat(common_data) 
-    common_df = regenerate_IDs(common_df)
+    in_both_dfs = get_common_expts(df_1, df_2)
 
-    return common_df
+    grouped_1 = df_1.groupby(["date", "animal", "trial"])
+    grouped_2 = df_2.groupby(["date", "animal", "trial"])
+    common_data_1 = [group for name,group in grouped_1 if name in in_both_dfs]
+    common_data_2 = [group for name,group in grouped_2 if name in in_both_dfs]
+
+    assert(len(common_data_1) == len(common_data_2)), "Lengths of common_data_1 and common_data_2 are unequal"
+
+    merged_dfs = []
+    for common_df_1, common_df_2 in zip(common_data_1, common_data_2):
+
+        # Compare common_df_1 vs common_df_2:
+        smaller_last_val = get_smaller_last_val(common_df_1, common_df_2, common_time)
+
+        if fill_method is "ffill":
+
+            # Merge common_df_1 with common_df_2:
+            merged_df = pd.merge_ordered(common_df_1, common_df_2, 
+                                        on=[common_time, "date", "animal", "trial"], 
+                                        fill_method=fill_method)
+
+            # Truncate merged with smaller of the mergees:
+            merged_df = merged_df.loc[merged_df[common_time] <= smaller_last_val]   
+        
+        elif fill_method is "linear":
+
+            # Merge common_df_1 with common_df_2:
+            merged_df = pd.merge_ordered(common_df_1, common_df_2, 
+                                        on=[common_time, "date", "animal", "trial"], 
+                                        fill_method=None)
+
+            # Truncate merged with smaller of the mergees:
+            merged_df = merged_df.loc[merged_df[common_time] <= smaller_last_val]
+
+            # Finally interpolate:
+            merged_df = merged_df.interpolate(method=fill_method)
+
+            # Ffill any remaining non-numeric values:
+            merged_df = merged_df.ffill(axis=0)
+
+        merged_dfs.append(merged_df)
+
+    final_df = pd.concat(merged_dfs)
+    final_df = regenerate_IDs(final_df)
+
+    return final_df
 
 
 # TODO: have this fxn wrap around my merge_timeseries() fxn! 
@@ -661,3 +672,27 @@ def merge_n_ordered(dfs, on, fill_method, truncate_on=None):
         return reduced_df.loc[reduced_df[on] <= truncate_on]
     
     return reduced_df
+
+
+def cut_before_1st_instance(df, col, val):
+
+    """
+    Cuts the dataframe before the 1st instance of a specified value in a column.
+
+    Parameters:
+    -----------
+    df: A Pandas dataframe.
+    col (str): A column in the Pandas dataframe
+    val (num):
+
+    Returns:
+    --------
+    A Pandas dataframe 
+    """
+
+    assert(col in df), f"The dataframe does not have the column, {col}"
+
+    neck = df.loc[df[col]==val].index[0] 
+    beheaded_df = df[neck:]
+    
+    return beheaded_df
