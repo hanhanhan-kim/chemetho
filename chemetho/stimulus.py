@@ -31,7 +31,7 @@ def convert_noexiit_servo(df, servo_min, servo_max, servo_touch):
     A Pandas dataframe. 
     """
     
-    assert "Servo output (degs)" in df,  f"The column 'Servo output (degs)' is not in the dataframe, 'df'."
+    assert "Servo output (degs)" in df,  "The column 'Servo output (degs)' is not in the dataframe, 'df'."
 
     # Generate function to map servo parameters:
     f_servo = spi.interp1d(np.linspace(0,180), np.linspace(servo_min, servo_max))
@@ -60,12 +60,11 @@ def make_noexiit_trajectory(df):
     Return:
     -------
     A dataframe with the NoEXIIT robot's X and Y coordinates. 
-
     """
 
-    assert("X_mm" in df), f"The dataframe must have a column called 'X_mm'"
-    assert("Y_mm" in df), f"The dataframe must have a column called 'Y_mm'"
-    assert("dist_from_stim_mm" in df), f"The dataframe must have a column called 'dist_from_stim_mm'"
+    assert("X_mm" in df), "The dataframe must have a column called 'X_mm'"
+    assert("Y_mm" in df), "The dataframe must have a column called 'Y_mm'"
+    assert("dist_from_stim_mm" in df), "The dataframe must have a column called 'dist_from_stim_mm'"
 
     def compute_X_mm(row):
         X_mm = row["X_mm"] + (row["dist_from_stim_mm"] * np.cos(np.deg2rad(row["Stepper output (degs)"])))
