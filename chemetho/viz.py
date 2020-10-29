@@ -631,20 +631,20 @@ def plot_trajectories(df, cmap_cols, low=0, high_percentile=95, respective=False
         # TODO: also change colorbar labels so max has =< symbol
         # TODO: Change background colour of colour bar, according to theme
         other_color_bar = ColorBar(color_mapper=other_mapper['transform'], 
-                                    title="robot " + cmap_labels[i],
-                                    title_text_font_size="7pt",
-                                    background_fill_color="#f8f5f2",
-                                    width=10,
-                                    location=(0,0))
+                                   title="robot " + cmap_labels[i],
+                                   title_text_font_size="7pt",
+                                   background_fill_color="#f8f5f2",
+                                   width=10,
+                                   location=(0,0))
 
         p.add_layout(other_color_bar, "right")
 
         p.circle(source=source,
-                    x="other_X_mm", 
-                    y="other_Y_mm", 
-                    color=other_mapper, 
-                    size=size, 
-                    alpha=alpha)
+                 x="other_X_mm", 
+                 y="other_Y_mm", 
+                 color=other_mapper, 
+                 size=size, 
+                 alpha=alpha)
 
         # Output:
         if save_path_to is not None:

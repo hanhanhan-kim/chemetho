@@ -1,15 +1,5 @@
 #!/usr/bin/env python3
 
-"""
-Process and visualize FicTrac data with helper functions. 
-When run as a script, transforms .dat FicTrac files into a single concatenated 
-Pandas dataframe with some additional columns. Then performs various processing 
-and plotting of the FicTrac data. Includes individual visualizations of 
-the frequency domain, low-pass Butterworth filtering, XY path with a colour map, ___. 
-Includes population visualizations, such as histograms, ECDFs, and __. 
-"""
-
-# import glob
 from sys import exit
 from shutil import rmtree
 from os.path import join, exists
