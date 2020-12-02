@@ -62,7 +62,7 @@ def parse_dats(root, ball_radius, acq_mode, do_confirm=True):
     Parameters:
     -----------
     root (str): Absolute path to the root directory. I.e. the outermost 
-        folder that houses the FicTrac .avi files
+        folder that houses the FicTrac .log and .dat files
 
     ball_radius (float): The radius of the ball (mm) the insect was on. 
         Used to compute the real-world values in mm.  
