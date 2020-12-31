@@ -52,9 +52,9 @@ my_expts
         │   │       ├── guid_00000004_YYYY_MM_DD_hh_mm_ss.avi
         │   │       └── guid_00000005_YYYY_MM_DD_hh_mm_ss.avi
         │   └── stimulus
-        │       ├── YYYYMMDD_hhmmss_motor_commands.csv
-        │       ├── YYYYMMDD_hhmmss_motor_commands.png
-        │       └── YYYYMMDD_hhmmss_motor_settings.txt
+        │       ├── o_loop_YYYY_MM_DD_hh_mm_ss.csv
+        │       ├── o_loop_YYYY_MM_DD_hh_mm_ss.png
+        │       └── motor_settings_YYYY_MM_DD_hh_mm_ss.txt
         └── t_control
             ├── _fictrac
             │   └── guid_00000001_YYYY_MM_DD_hh_mm_ss.avi

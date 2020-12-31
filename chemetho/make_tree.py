@@ -29,9 +29,7 @@ def main():
     nesting = args.nesting
 
     folders = glob.glob(join(root, nesting * "*/"))
-    subdirs = ["fictrac/",
-               "stimulus/",
-               "pose/"]
+    subdirs = ["fictrac/", "stimulus/", "pose/"]
 
     for folder in folders:
 
@@ -60,7 +58,7 @@ def main():
         # Put non-vid files into stimulus subdir:
         nonvids = glob.glob(join(folder, "*"))
         for nonvid in nonvids:
-            if "motor" in nonvid:
+            if "loop" in nonvid and "motor" in nonvid:
                 move(nonvid, join(folder, "stimulus/"))
 
 
