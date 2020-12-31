@@ -36,11 +36,41 @@ Within each `/<trial>`, there should be three subdirectories, one for each data 
 3. `/stimulus` stores data about the stimulus presentation
    - PID data is stored here, even if the PID data is not derived from a stimulus 
 
-Running the `make_tree.py` script in terminal will generate the above three subdirectories. It will also move files into the corresponding subdirectory, according to identifiers in the files' names. 
+Running the `make_tree.py` script in terminal will generate the above three subdirectories. It will also move files into the corresponding subdirectory, according to identifiers in the files' names. The resulting output might look like the following: 
 
-If you do not have all three of the above data types for your experiment, make only those subdirectories that are relevant to your experiments. 
+```
+my_expts
+├── date
+    ├── animal_0
+        ├── t_0
+        │   ├── fictrac
+        │   │   ├── guid_00000001_YYYY_MM_DD_hh_mm_ss.avi
+        │   ├── pose
+        │   │   └── videos-raw
+        │   │       ├── guid_00000002_YYYY_MM_DD_hh_mm_ss.avi
+        │   │       ├── guid_00000003_YYYY_MM_DD_hh_mm_ss.avi
+        │   │       ├── guid_00000004_YYYY_MM_DD_hh_mm_ss.avi
+        │   │       └── guid_00000005_YYYY_MM_DD_hh_mm_ss.avi
+        │   └── stimulus
+        │       ├── YYYYMMDD_hhmmss_motor_commands.csv
+        │       ├── YYYYMMDD_hhmmss_motor_commands.png
+        │       └── YYYYMMDD_hhmmss_motor_settings.txt
+        └── t_control
+            ├── _fictrac
+            │   └── guid_00000001_YYYY_MM_DD_hh_mm_ss.avi
+            ├── pose
+            │   ├── guid_00000002_YYYY_MM_DD_hh_mm_ss.avi
+            │   ├── guid_00000003_YYYY_MM_DD_hh_mm_ss.avi
+            │   ├── guid_00000004_YYYY_MM_DD_hh_mm_ss.avi
+            │   └── guid_00000005_YYYY_MM_DD_hh_mm_ss.avi
+            └── stimulus
+                ├── YYYYMMDD_hhmmss_motor_commands.csv
+                ├── YYYYMMDD_hhmmss_motor_commands.png
+                └── YYYYMMDD_hhmmss_motor_settings.txt
 
-#TODO: Provide an example file tree structure. 
+```
+
+If you do not have all three of the above data types──`/fictrac`, `/pose`, `/stimulus`── for your experiment, make only those subdirectories that are relevant to your experiments. 
 
 #TODO: Decide whether to put GC-MS and GC-FID data as a 4th (general GC subdir?) or 4th and 5th subdirectory, even though they're not timeseries data. The alternative is to put them in their own thing. 
 
