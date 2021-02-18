@@ -463,9 +463,6 @@ def main():
         
     print("")
 
-        # TODO: Keep track of data the script has succesfully inspected!
-        # Won't be worth the work though, if compute is fast. 
-
 
 if __name__ == "__main__":
     main()
