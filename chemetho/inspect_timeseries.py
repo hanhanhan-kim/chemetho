@@ -374,6 +374,8 @@ def main():
     datapath = expanduser(args.datapath)
     set_dt = 1 / float(args.set_hz)
 
+    assert Path(datapath).is_dir(), f"{datapath} is not a directory"
+
     fmf_paths = [str(path) for path in Path(datapath).rglob("*.fmf")] 
     csv_paths = [str(path) for path in Path(datapath).rglob("*.csv")] 
     paths = fmf_paths + csv_paths
@@ -396,7 +398,12 @@ def main():
     # Process and inspect all data:
     for expt, dataset in expts.items():
     
-        # TODO: assert 1 motor file, 1 daq file, 5 cam files
+        assert len([data for data in dataset if "daq" in data]) == 1, \
+            "The no. of DAQ .csv outputs is not exactly 1"
+        assert len([data for data in dataset if "motor" in data]) == 1, \
+            "The no. of Autostep .csv outputs is not exactly 1"
+        assert len([data for data in dataset if ".fmf" in data]) == 5, \
+            "The no. of .fmf videos is not exactly 5"
         fail_msg = f"\u274C The experiment from {expt} failed the inspection"
         
         fmf_paths = []
