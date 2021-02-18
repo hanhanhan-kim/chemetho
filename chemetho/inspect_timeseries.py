@@ -430,7 +430,7 @@ def main():
         
         # Finally, inspect the dataset:
         print(f"DAQ frequency: {get_freq_from_datetimes(daq):.2f} Hz")
-        print(f"Autostep frequency:{get_freq_from_datetimes(motor):.2f} Hz")
+        print(f"Autostep frequency: {get_freq_from_datetimes(motor):.2f} Hz")
 
         trig_dt = np.mean(get_cam_dts_from_daq(daq)) # from DAQ
         all_dts = get_cam_dts_from_fmfs(fmfs) # from fmfs
