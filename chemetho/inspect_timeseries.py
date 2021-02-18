@@ -397,8 +397,7 @@ def main():
     for expt, dataset in expts.items():
     
         # TODO: assert 1 motor file, 1 daq file, 5 cam files
-        # TODO: fail_msg should say which file failed
-        fail_msg = ""
+        fail_msg = f"\u274C The experiment from {expt} failed the inspection"
         
         fmf_paths = []
         for data in dataset:
