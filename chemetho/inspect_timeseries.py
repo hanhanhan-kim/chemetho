@@ -277,7 +277,7 @@ def did_frames_skip(daq, fmfs, set_dt):
     # If no .fmfs have skipped frames:
     all_skipped_frames = get_img_frame_skips(fmfs, set_dt)
     if all([df.empty for df in all_skipped_frames]):
-        print("\u2714 timestamps from .fmfs have no skipped frames")
+        print("\u2714 timestamps from .fmfs suggest no skipped frames")
     else:
         print("\u274C timestamps from .fmfs detected skipped frames")
         return True
@@ -308,9 +308,9 @@ def is_startup_good(daq, motor):
 
     # DAQ starts before motor?
     if daq["datetime"].iloc[0] < motor["datetime"].iloc[0]:
-        print("\u2714 DAQ start \u2192 motor start")
+        print("\u2714 DAQ start\u2192 motor start")
     else:
-        print("\u274C DAQ start \u2192 motor start")
+        print("\u274C DAQ start\u2192 motor start")
         return False
 
     # Motor starts before cam trigger?
@@ -320,9 +320,9 @@ def is_startup_good(daq, motor):
     # Check that cam trigger started last by checking that frame counts
     # stayed at 0 on start-up for longer than expected:
     if get_precam_duration(daq) > 10 * np.mean(get_cam_dts_from_daq(daq)): 
-        print("\u2714 motor start \u2192 cam trigger start")
+        print("\u2714 motor start\u2192 cam trigger start")
     else:
-        print("\u274C motor start \u2192 cam trigger start")
+        print("\u274C motor start\u2192 cam trigger start")
         return False
 
     return True
@@ -346,16 +346,16 @@ def is_ending_good(daq, motor):
 
     # Cam trigger finishes collecting before motor?   
     if get_postcam_duration(daq) > 10 * np.mean(get_cam_dts_from_daq(daq)):
-        print("\u2714 cam trigger end \u2192 motor end")
+        print("\u2714 cam trigger end\u2192 motor end")
     else:
-        print("\u274C cam trigger end \u2192 motor end")
+        print("\u274C cam trigger end\u2192 motor end")
         return False
 
     # Motor finishes collecting before DAQ?
     if daq["datetime"].iloc[-1] > motor["datetime"].iloc[-1]:
-        print("\u2714 motor end \u2192 DAQ end")
+        print("\u2714 motor end\u2192 DAQ end")
     else:
-        print("\u274C motor end \u2192 DAQ end")
+        print("\u274C motor end\u2192 DAQ end")
         return False
 
     return True
@@ -396,8 +396,11 @@ def main():
                     expts[leaf].append(path)
 
     # Process and inspect all data:
-    for expt, dataset in expts.items():
-    
+    for expt, dataset in expts.items():        
+
+        print(f"\nexpt: {expt}")
+        print("-------------------------------")
+
         assert len([data for data in dataset if "daq" in data]) == 1, \
             "The no. of DAQ .csv outputs is not exactly 1"
         assert len([data for data in dataset if "motor" in data]) == 1, \
@@ -426,11 +429,19 @@ def main():
                                         format="%Y-%m-%d %H:%M:%S.%f")
         
         # Finally, inspect the dataset:
-        print(f"DAQ frequency: {get_freq_from_datetimes(daq)} Hz")
-        print(f"Autostep frqeuency:{get_freq_from_datetimes(motor)} Hz")
-        # TODO: check that get_cam_dts_from_daq() == get_cam_dts_from_imgs() 
-        # Then use one of them to print out the approximate real cam freq     
+        print(f"DAQ frequency: {get_freq_from_datetimes(daq):.2f} Hz")
+        print(f"Autostep frequency:{get_freq_from_datetimes(motor):.2f} Hz")
 
+        trig_dt = np.mean(get_cam_dts_from_daq(daq)) # from DAQ
+        all_dts = get_cam_dts_from_fmfs(fmfs) # from fmfs
+        mean_dts = [np.mean(dts).to_numpy() for dts in all_dts]
+
+        if all([are_dts_close(mean_dt, trig_dt) for mean_dt in mean_dts]):
+            print(f"Video frequencies: {1/trig_dt:.2f} Hz")
+        else:
+            print(fail_msg)
+            break
+    
         if is_startup_good(daq, motor):
             pass
         else:
@@ -450,7 +461,7 @@ def main():
             print(fail_msg) 
             break
         
-    print("\n")
+    print("")
 
         # TODO: Keep track of data the script has succesfully inspected!
         # Won't be worth the work though, if compute is fast. 
