@@ -15,6 +15,7 @@ Script outputs only print messages to terminal.
 
 import argparse 
 from pathlib import Path
+from os.path import expanduser
 import math
 
 import pandas as pd
@@ -268,9 +269,9 @@ def did_frames_skip(daq, fmfs, set_dt):
 
     # If the DAQ didn't count any frame signal skips: 
     if len(get_daq_frame_skips(daq)) == 0:
-        print("\u2714 DAQ did not detect any skipped frames.")
+        print("\u2714 DAQ did not detect any skipped frames")
     else:
-        print("\u274C DAQ detected skipped frames.")
+        print("\u274C DAQ detected skipped frames")
         return True
 
     # If no .fmfs have skipped frames:
@@ -365,12 +366,12 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__, 
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
 
-    parser.add_argument("datapath", help="")
-    parser.add_argument("set_hz", type="int", help="")
+    parser.add_argument("datapath", help="Path to root data directory.")
+    parser.add_argument("set_hz", type="float", help="Target framerate of cam trigger in Hz.")
 
     args = parser.parse_args()
 
-    datapath = args.datapath
+    datapath = expanduser(args.datapath)
     set_dt = 1 / args.set_hz
 
     fmf_paths = [str(path) for path in Path(datapath).rglob("*.fmf")] 
@@ -392,7 +393,7 @@ def main():
                 else:
                     expts[leaf].append(path)
 
-    # 
+    # Process and inspect all data:
     for expt, dataset in expts.items():
     
         # TODO: assert 1 motor file, 1 daq file, 5 cam files
@@ -419,20 +420,22 @@ def main():
                                         format="%Y-%m-%d %H:%M:%S.%f")
         
         # Finally, inspect the dataset:
-        if is_ending_good(daq, motor):
-            pass
-        else:
-            print(fail_msg)
-
         if is_startup_good(daq, motor):
             pass
         else:
             print(fail_msg)
 
+        if is_ending_good(daq, motor):
+            pass
+        else:
+            print(fail_msg)
+
         if not did_frames_skip(daq, fmfs, set_dt):
-            print("\n")
+            pass
         else:
             print(fail_msg) # TODO: and return all skipped frame instances here
+        
+        print("\n")
 
         # TODO??: check that get_cam_dts_from_daq() == get_cam_dts_from_imgs()
 
