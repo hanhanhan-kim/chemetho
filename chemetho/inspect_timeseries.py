@@ -1,5 +1,19 @@
 #!/usr/bin/env python3
 
+"""
+Inspect timeseries data from NoEXIIT.
+
+Checks that the order of acquisition events during 
+both start-up and ending are as expected, and that 
+no frames were skipped during video capture.
+
+Assumes that data from the same experiment are found
+in the same leaf subdirectory.  
+
+Script outputs only print messages to terminal. 
+"""
+
+import argparse 
 from pathlib import Path
 import math
 
@@ -170,7 +184,7 @@ def get_cam_dts_from_fmfs(fmfs):
                         for fmf in fmfs]
     all_dts = np.diff(all_elapsed_secs)
 
-    # Convert list of np arrays into list of dfs, for consistency:
+    # Turn into list of dfs, for consistency:
     all_dts = [pd.DataFrame(dts, columns=["dts (secs)"]) 
                for dts in all_dts]
 
@@ -225,7 +239,7 @@ def get_img_frame_skips(fmfs, set_dt):
     # N.B. I don't directly know if frames were skipped, 
     # I have to estimate from dt dissimilarities. 
 
-    # Turn into list of dataframes: 
+    # Turn into list of dfs, for consistency:: 
     all_skipped_frames = [pd.DataFrame(skipped_idxs, columns=["frame no."]) 
                           for skipped_idxs in all_skipped_idxs]
 
@@ -254,15 +268,17 @@ def did_frames_skip(daq, fmfs, set_dt):
 
     # If the DAQ didn't count any frame signal skips: 
     if len(get_daq_frame_skips(daq)) == 0:
-        pass
+        print("\u2714 DAQ did not detect any skipped frames.")
     else:
+        print("\u274C DAQ detected skipped frames.")
         return True
 
-    # If all .fmfs have no skipped frames:
+    # If no .fmfs have skipped frames:
     all_skipped_frames = get_img_frame_skips(fmfs, set_dt)
     if all([df.empty for df in all_skipped_frames]):
-        pass
+        print("\u2714 timestamps from .fmfs have no skipped frames")
     else:
+        print("\u274C timestamps from .fmfs detected skipped frames")
         return True
     
     return False
@@ -346,44 +362,82 @@ def is_ending_good(daq, motor):
 
 def main():
 
-    cam_hz = 100 # the set freq, which should be user inputted
-    set_dt = 1/cam_hz
-    fail_msg = ""
-    daq = "" # df ... pd.read_csv(path)
-    motor = "" # df ... pd.read_csv(path)
-    fmfs = "" # list of fmf objects
+    parser = argparse.ArgumentParser(description=__doc__, 
+                                     formatter_class=argparse.RawDescriptionHelpFormatter)
 
-    # Specify data (.csvs with "motor" and "daq" keywords) 
-    # default to all data
-    # TODO: Need to figure out how to keep the groupings of related data files
+    parser.add_argument("datapath", help="")
+    parser.add_argument("set_hz", type="int", help="")
 
-    # Transform data to correct object types (convert datetime strs to datetime objs)
+    args = parser.parse_args()
 
-    if is_ending_good(daq, motor):
-        pass
-    else:
-        print(fail_msg)
-        return False
+    datapath = args.datapath
+    set_dt = 1 / args.set_hz
 
-    if is_startup_good(daq, motor):
-        pass
-    else:
-        print(fail_msg)
-        return False
+    fmf_paths = [str(path) for path in Path(datapath).rglob("*.fmf")] 
+    csv_paths = [str(path) for path in Path(datapath).rglob("*.csv")] 
+    paths = fmf_paths + csv_paths
 
-    if not did_frames_skip(daq, fmfs, set_dt):
-        pass
-    else:
-        print(fail_msg)
-        return False
+    # Get leaf subdirectories: 
+    # N.B. assumes unique expt is date -> animal -> trial
+    splitted = ["/".join(path.split("/")[-4:-1]) for path in paths]
+    leaves = set(splitted)
 
-    # check that get_cam_dts_from_daq() == get_cam_dts_from_imgs()
-    # and return all mismatches
+    # Sort into leaf:data pairs:
+    expts = {}
+    for path in paths:
+        for leaf in leaves: 
+            if leaf in path:
+                if not leaf in expts.keys():
+                    expts[leaf] = [path] # make key
+                else:
+                    expts[leaf].append(path)
 
-    # Keep track of data the script has succesfully inspected!
-    # Won't be worth the work though, if compute is fast. 
+    # 
+    for expt, dataset in expts.items():
+    
+        # TODO: assert 1 motor file, 1 daq file, 5 cam files
+        # TODO: fail_msg should say which file failed
+        fail_msg = ""
+        
+        fmf_paths = []
+        for data in dataset:
 
-    return True
+            if ".fmf" in data:
+                fmf_paths.append(data)
+            elif "daq" in data:
+                daq = pd.read_csv(data)
+            elif "motor" in data:
+                motor = pd.read_csv(data)
+            else:
+                print(f"Unrecognized file type in experiment, {expt}")
+                
+        # Parse dataset into correct types:
+        fmfs = [FMF.FlyMovie(path) for path in fmf_paths]
+        motor["datetime"] = pd.to_datetime(motor["datetime"], 
+                                        format="%Y-%m-%d %H:%M:%S.%f")
+        daq["datetime"] = pd.to_datetime(daq["datetime"], 
+                                        format="%Y-%m-%d %H:%M:%S.%f")
+        
+        # Finally, inspect the dataset:
+        if is_ending_good(daq, motor):
+            pass
+        else:
+            print(fail_msg)
+
+        if is_startup_good(daq, motor):
+            pass
+        else:
+            print(fail_msg)
+
+        if not did_frames_skip(daq, fmfs, set_dt):
+            print("\n")
+        else:
+            print(fail_msg) # TODO: and return all skipped frame instances here
+
+        # TODO??: check that get_cam_dts_from_daq() == get_cam_dts_from_imgs()
+
+        # TODO: Keep track of data the script has succesfully inspected!
+        # Won't be worth the work though, if compute is fast. 
 
 
 if __name__ == "__main__":
