@@ -367,12 +367,12 @@ def main():
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
 
     parser.add_argument("datapath", help="Path to root data directory.")
-    parser.add_argument("set_hz", type="float", help="Target framerate of cam trigger in Hz.")
+    parser.add_argument("set_hz", help="Target framerate of cam trigger in Hz.")
 
     args = parser.parse_args()
 
     datapath = expanduser(args.datapath)
-    set_dt = 1 / args.set_hz
+    set_dt = 1 / float(args.set_hz)
 
     fmf_paths = [str(path) for path in Path(datapath).rglob("*.fmf")] 
     csv_paths = [str(path) for path in Path(datapath).rglob("*.csv")] 
@@ -419,24 +419,31 @@ def main():
                                         format="%Y-%m-%d %H:%M:%S.%f")
         
         # Finally, inspect the dataset:
+        print(f"DAQ frequency: {get_freq_from_datetimes(daq)} Hz")
+        print(f"Autostep frqeuency:{get_freq_from_datetimes(motor)} Hz")
+        # TODO: check that get_cam_dts_from_daq() == get_cam_dts_from_imgs() 
+        # Then use one of them to print out the approximate real cam freq     
+
         if is_startup_good(daq, motor):
             pass
         else:
             print(fail_msg)
+            break
 
         if is_ending_good(daq, motor):
             pass
         else:
             print(fail_msg)
+            break
 
         if not did_frames_skip(daq, fmfs, set_dt):
             pass
         else:
-            print(fail_msg) # TODO: and return all skipped frame instances here
+            # TODO: print all skipped frame instances here
+            print(fail_msg) 
+            break
         
-        print("\n")
-
-        # TODO??: check that get_cam_dts_from_daq() == get_cam_dts_from_imgs()
+    print("\n")
 
         # TODO: Keep track of data the script has succesfully inspected!
         # Won't be worth the work though, if compute is fast. 
