@@ -271,7 +271,7 @@ def did_frames_skip(daq, fmfs, set_dt):
     if len(get_daq_frame_skips(daq)) == 0:
         print("\u2714 DAQ did not detect any skipped frames")
     else:
-        print("\u274C DAQ detected skipped frames")
+        print("\u2717 DAQ detected skipped frames")
         return True
 
     # If no .fmfs have skipped frames:
@@ -279,7 +279,7 @@ def did_frames_skip(daq, fmfs, set_dt):
     if all([df.empty for df in all_skipped_frames]):
         print("\u2714 timestamps from .fmfs suggest no skipped frames")
     else:
-        print("\u274C timestamps from .fmfs detected skipped frames")
+        print("\u2717 timestamps from .fmfs detected skipped frames")
         return True
     
     return False
@@ -310,7 +310,7 @@ def is_startup_good(daq, motor):
     if daq["datetime"].iloc[0] < motor["datetime"].iloc[0]:
         print("\u2714 DAQ start\u2192 motor start")
     else:
-        print("\u274C DAQ start\u2192 motor start")
+        print("\u2717 DAQ start\u2192 motor start")
         return False
 
     # Motor starts before cam trigger?
@@ -322,7 +322,7 @@ def is_startup_good(daq, motor):
     if get_precam_duration(daq) > 10 * np.mean(get_cam_dts_from_daq(daq)): 
         print("\u2714 motor start\u2192 cam trigger start")
     else:
-        print("\u274C motor start\u2192 cam trigger start")
+        print("\u2717 motor start\u2192 cam trigger start")
         return False
 
     return True
@@ -348,14 +348,14 @@ def is_ending_good(daq, motor):
     if get_postcam_duration(daq) > 10 * np.mean(get_cam_dts_from_daq(daq)):
         print("\u2714 cam trigger end\u2192 motor end")
     else:
-        print("\u274C cam trigger end\u2192 motor end")
+        print("\u2717 cam trigger end\u2192 motor end")
         return False
 
     # Motor finishes collecting before DAQ?
     if daq["datetime"].iloc[-1] > motor["datetime"].iloc[-1]:
         print("\u2714 motor end\u2192 DAQ end")
     else:
-        print("\u274C motor end\u2192 DAQ end")
+        print("\u2717 motor end\u2192 DAQ end")
         return False
 
     return True
@@ -407,7 +407,7 @@ def main():
             "The no. of Autostep .csv outputs is not exactly 1"
         assert len([data for data in dataset if ".fmf" in data]) == 5, \
             "The no. of .fmf videos is not exactly 5"
-        fail_msg = f"\u274C The experiment from {expt} failed the inspection"
+        fail_msg = f"\ninspection FAILED at: {expt}"
         
         fmf_paths = []
         for data in dataset:
