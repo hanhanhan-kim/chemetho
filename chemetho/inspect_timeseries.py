@@ -397,7 +397,6 @@ def main():
 
     # Process and inspect all data:
     failed_expts = []
-    did_fail = False
     for expt, dataset in expts.items():        
 
         print(f"\nexpt: {expt}")
@@ -437,35 +436,36 @@ def main():
         all_dts = get_cam_dts_from_fmfs(fmfs) # from fmfs
         mean_dts = [np.mean(dts).to_numpy() for dts in all_dts]
 
+        fails = []
+
         if all([are_dts_close(mean_dt, trig_dt) for mean_dt in mean_dts]):
             print(f"Video frequencies: {1/trig_dt:.2f} Hz")
         else:
-            did_fail = True
-            
+            fails.append(True)   
     
         if is_startup_good(daq, motor):
             pass
         else:
-            did_fail = True
+            fails.append(True)
 
         if is_ending_good(daq, motor):
             pass
         else:
-            did_fail = True
+            fails.append(True)
 
         if not did_frames_skip(daq, fmfs, set_dt):
             pass
         else:
             # TODO: print all skipped frame instances here
-            did_fail = True
+            fails.append(True)
 
-        if did_fail:
+        if any(fails):
             failed_expts.append(expt)
 
-    if did_fail:
+    if any(failed_expts):
         print(f"\nexpts failed at: {str(failed_expts).strip('[]')}")
     else:
-        print(f"\nall expts succeeded")
+        print(f"\n\u2714 all expts succeeded")
         
     print("")
 
