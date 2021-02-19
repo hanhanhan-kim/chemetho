@@ -269,17 +269,17 @@ def did_frames_skip(daq, fmfs, set_dt):
 
     # If the DAQ didn't count any frame signal skips: 
     if len(get_daq_frame_skips(daq)) == 0:
-        print("\u2714 DAQ did not detect any skipped frames")
+        print(u"\u001b[32m\u2714\u001b[0m DAQ did not detect any skipped frames")
     else:
-        print("\u2717 DAQ detected skipped frames")
+        print(u"\u001b[31m\u2717\u001b[0m DAQ detected skipped frames")
         return True
 
     # If no .fmfs have skipped frames:
     all_skipped_frames = get_img_frame_skips(fmfs, set_dt)
     if all([df.empty for df in all_skipped_frames]):
-        print("\u2714 timestamps from .fmfs suggest no skipped frames")
+        print(u"\u001b[32m\u2714\u001b[0m timestamps from .fmfs suggest no skipped frames")
     else:
-        print("\u2717 timestamps from .fmfs detected skipped frames")
+        print(u"\u001b[31m\u2717\u001b[0m timestamps from .fmfs detected skipped frames")
         return True
     
     return False
@@ -308,9 +308,9 @@ def is_startup_good(daq, motor):
 
     # DAQ starts before motor?
     if daq["datetime"].iloc[0] < motor["datetime"].iloc[0]:
-        print("\u2714 DAQ start\u2192 motor start")
+        print(u"\u001b[32m\u2714\u001b[0m DAQ start\u2192 motor start")
     else:
-        print("\u2717 DAQ start\u2192 motor start")
+        print(u"\u001b[31m\u2717\u001b[0m DAQ start\u2192 motor start")
         return False
 
     # Motor starts before cam trigger?
@@ -320,9 +320,9 @@ def is_startup_good(daq, motor):
     # Check that cam trigger started last by checking that frame counts
     # stayed at 0 on start-up for longer than expected:
     if get_precam_duration(daq) > 10 * np.mean(get_cam_dts_from_daq(daq)): 
-        print("\u2714 motor start\u2192 cam trigger start")
+        print(u"\u001b[32m\u2714\u001b[0m motor start\u2192 cam trigger start")
     else:
-        print("\u2717 motor start\u2192 cam trigger start")
+        print(u"\u001b[31m\u2717\u001b[0m motor start\u2192 cam trigger start")
         return False
 
     return True
@@ -346,16 +346,16 @@ def is_ending_good(daq, motor):
 
     # Cam trigger finishes collecting before motor?   
     if get_postcam_duration(daq) > 10 * np.mean(get_cam_dts_from_daq(daq)):
-        print("\u2714 cam trigger end\u2192 motor end")
+        print(u"\u001b[32m\u2714\u001b[0m cam trigger end\u2192 motor end")
     else:
-        print("\u2717 cam trigger end\u2192 motor end")
+        print(u"\u001b[31m\u2717\u001b[0m cam trigger end\u2192 motor end")
         return False
 
     # Motor finishes collecting before DAQ?
     if daq["datetime"].iloc[-1] > motor["datetime"].iloc[-1]:
-        print("\u2714 motor end\u2192 DAQ end")
+        print(u"\u001b[32m\u2714\u001b[0m motor end\u2192 DAQ end")
     else:
-        print("\u2717 motor end\u2192 DAQ end")
+        print(u"\u001b[31m\u2717\u001b[0m motor end\u2192 DAQ end")
         return False
 
     return True
@@ -465,7 +465,7 @@ def main():
     if any(failed_expts):
         print(f"\nexpts failed at: {str(failed_expts).strip('[]')}")
     else:
-        print(f"\n\u2714 all expts succeeded")
+        print("\n\u2714 all expts succeeded")
         
     print("")
 
