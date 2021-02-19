@@ -378,7 +378,7 @@ def main():
 
     fmf_paths = [str(path) for path in Path(datapath).rglob("*.fmf")] 
     csv_paths = [str(path) for path in Path(datapath).rglob("*.csv")] 
-    paths = fmf_paths + csv_paths
+    paths = sorted(fmf_paths + csv_paths)
 
     # Get leaf subdirectories: 
     # N.B. assumes unique expt is date -> animal -> trial
@@ -396,6 +396,8 @@ def main():
                     expts[leaf].append(path)
 
     # Process and inspect all data:
+    failed_expts = []
+    did_fail = False
     for expt, dataset in expts.items():        
 
         print(f"\nexpt: {expt}")
@@ -407,7 +409,6 @@ def main():
             "The no. of Autostep .csv outputs is not exactly 1"
         assert len([data for data in dataset if ".fmf" in data]) == 5, \
             "The no. of .fmf videos is not exactly 5"
-        fail_msg = f"\ninspection FAILED at: {expt}"
         
         fmf_paths = []
         for data in dataset:
@@ -439,27 +440,29 @@ def main():
         if all([are_dts_close(mean_dt, trig_dt) for mean_dt in mean_dts]):
             print(f"Video frequencies: {1/trig_dt:.2f} Hz")
         else:
-            print(fail_msg)
-            break
+            did_fail = True
+            
     
         if is_startup_good(daq, motor):
             pass
         else:
-            print(fail_msg)
-            break
+            did_fail = True
 
         if is_ending_good(daq, motor):
             pass
         else:
-            print(fail_msg)
-            break
+            did_fail = True
 
         if not did_frames_skip(daq, fmfs, set_dt):
             pass
         else:
             # TODO: print all skipped frame instances here
-            print(fail_msg) 
-            break
+            did_fail = True
+
+        if did_fail:
+            failed_expts.append(expt)
+
+    print(f"\nexpts failed at: {str(failed_expts).strip('[]')}")
         
     print("")
 
