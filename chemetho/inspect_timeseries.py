@@ -462,7 +462,10 @@ def main():
         if did_fail:
             failed_expts.append(expt)
 
-    print(f"\nexpts failed at: {str(failed_expts).strip('[]')}")
+    if did_fail:
+        print(f"\nexpts failed at: {str(failed_expts).strip('[]')}")
+    else:
+        print(f"\nall expts succeeded")
         
     print("")
 
