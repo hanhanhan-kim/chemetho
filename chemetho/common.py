@@ -8,7 +8,7 @@ import pandas as pd
 import numpy as np
 import scipy.signal as sps
 
-from .constants import banned_substrings
+from chemetho.constants import banned_substrings
 
 # TODO: Check for dataframe object type:
 
@@ -608,7 +608,7 @@ def merge_timeseries(df_1, df_2,
         # Compare common_df_1 vs common_df_2:
         smaller_last_val = get_smaller_last_val(common_df_1, common_df_2, common_time)
 
-        if fill_method is "ffill":
+        if fill_method == "ffill":
 
             # Merge common_df_1 with common_df_2:
             merged_df = pd.merge_ordered(common_df_1, common_df_2, 
@@ -618,7 +618,7 @@ def merge_timeseries(df_1, df_2,
             # Truncate merged with smaller of the mergees:
             merged_df = merged_df.loc[merged_df[common_time] <= smaller_last_val]   
         
-        elif fill_method is "linear":
+        elif fill_method == "linear":
 
             # Merge common_df_1 with common_df_2:
             merged_df = pd.merge_ordered(common_df_1, common_df_2, 

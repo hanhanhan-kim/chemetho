@@ -5,8 +5,8 @@ VERSION = __version__
 
 # from . import common, constants, fourier, viz, fictrac, deeplabcut, stimulus, chemistry
 
-from .common import *
-from .viz import *
-from .fictrac import *
-from .robots import *
-from .chemistry import *
+from chemetho.common import *
+from chemetho.viz import *
+from chemetho.fictrac import *
+from chemetho.robots import *
+from chemetho.chemistry import *
