@@ -695,3 +695,120 @@ def behead_conditionally(df, col, val):
     beheaded_df = df[neck:]
     
     return beheaded_df
+
+
+def as_sum_of_base_2s(x):
+
+    """
+    Decomposes a natural number into a sum of base 2 powers. 
+
+    Parameters:
+    -----------
+    x (int): A natural number to decompose.
+
+    Returns:
+    --------
+    A list of natural base 2 powers that when summed, returns `x`. 
+
+    """
+
+    base2s = []
+    i = 1
+    while i <= x:
+        if i & x:
+            base2s.append(i)
+        i <<= 1
+    return base2s
+
+
+def bits2IOs(row, pinset="EIO"):
+
+    """
+    Converts digital inputs from the EIO or FIO pins of the
+    LabJack U3 DAQ into their physical pin numbers. 
+    For the FIO pins, see the standard numbering of DB15 headers. 
+    This function is a helper function that is exclusively meant 
+    to be passed into Pandas' `apply()`. 
+
+    Parameters:
+    -----------
+    row (int): row of a Pandas series. 
+
+    Returns:
+    --------
+    A list of pin numbers that were held HIGH. 
+    """
+    
+    strings = row.strip("()").split(",")
+    ints = [int(string) for string in strings]
+    
+    if pinset=="FIO":
+        base2s = as_sum_of_base_2s(ints[0])
+    elif pinset=="EIO":
+        base2s = as_sum_of_base_2s(ints[1])
+    else:
+        raise ValueError("`pinset` must be 'EIO' or 'FIO'")
+        
+    powers = [int(np.log2(base2)) for base2 in base2s]
+    
+    return powers
+
+
+def make_square_waves(df, col_name, pinset="EIO"):
+
+    """
+    Expands a column in a Pandas dataframe whose entries are
+    a list of LabJack U3 DAQ pin numbers that were held HIGH, 
+    into several columns that each contain the state (0 or 1) 
+    of a unique pin. 
+
+    Parameters:
+    -----------
+    df: A Pandas dataframe
+    col_name (str): A column name in `df` that contains the raw 
+        readings of digital inputs from the LabJack U3 DAQ.
+    pinset (str): Specifies whether the U3 inputs are from the EIO 
+        or FIO pinsets.
+
+    Returns:
+    --------
+    A Pandas dataframe. 
+    """
+    
+    if pinset != ("EIO" or "FIO"):
+        raise ValueError("`pinset` must be 'EIO' or 'FIO'")
+
+    df["datetime"]= pd.to_datetime(df["datetime"])
+    df["elapsed"] = df["datetime"]-df["datetime"][0]
+    df["elapsed"] = df["elapsed"].dt.total_seconds()
+    
+    df[f"high_{pinset}_pins"] = df[col_name].apply(bits2IOs, pinset=pinset)
+    
+    exploded = df.explode(f"high_{pinset}_pins")
+    exploded['_helper'] = True
+    wide = exploded.pivot(index="datetime", columns=f"high_{pinset}_pins", values="_helper")
+    
+    # Replace NaNs with False
+    wide = wide.fillna(False) 
+    
+    wide.reset_index(level=0, inplace=True)
+    # Make index nameless:
+    wide.columns.name='' 
+    
+    wide = wide.rename(columns={0: f"{pinset} pin O", 
+                            1: f"{pinset} pin 1", 
+                            2: f"{pinset} pin 2", 
+                            3: f"{pinset} pin 3", 
+                            4: f"{pinset} pin 4", 
+                            5: f"{pinset} pin 5", 
+                            6: f"{pinset} pin 6", 
+                            7: f"{pinset} pin 7",})
+    
+    assert len(wide) == len(df)
+    
+    merged = pd.merge_ordered(df, wide, on="datetime")
+
+    # Drop the "high_EIO_pins" column, which we don't need anymore:
+    final = merged.drop(columns=[f"high_{pinset}_pins"])
+    
+    return final
