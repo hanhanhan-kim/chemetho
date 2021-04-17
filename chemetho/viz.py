@@ -170,7 +170,6 @@ def plot_power_spectra(df, val_cols, time_col,
                 exit("Re-run this function with a 'time_col' whose units are secs.")
 
     assert (time_col in df), f"The column, {time_col}, is not in the input dataframe."
-    assert ("ID" in df), "The column 'ID' is not in in the input dataframe."
     
     time = list(df[str(time_col)])
 
