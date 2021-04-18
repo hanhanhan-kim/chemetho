@@ -812,3 +812,34 @@ def make_square_waves(df, col_name, pinset="EIO"):
     final = merged.drop(columns=[f"high_{pinset}_pins"])
     
     return final
+
+
+def lag_finder(y1, y2, sr):
+    
+    """
+    Figure out the lag between two time series, provided that
+    they have a common (and sync'd) sampling rate. 
+
+    Parameters:
+    -----------
+    y1: dataset 1, e.g Pandas series
+    y2: dataset 2, e.g. Pandas series
+    sr (int): sampling rate
+    
+    Returns:
+    --------
+    delay_arr (np arr): array of 0-centred times (x)
+    corr (np arr): array of correlation coefficients (y)
+    delay (fl): argmax of `corr`, i.e. the delay 
+    """
+    
+    n = len(y1)
+    
+    # Normalize correlation by square root of auto-correlation products
+    corr = sps.correlate(y2, y1, mode='same') / np.sqrt(sps.correlate(y1, y1, mode='same')[int(n/2)] * sps.correlate(y2, y2, mode='same')[int(n/2)])
+
+    delay_arr = np.linspace(-0.5*n/sr, 0.5*n/sr, n) # 0.5 is just defining bounds on window
+    delay = delay_arr[np.argmax(corr)]
+    print('y2 is ' + str(delay) + ' behind y1')
+    
+    return delay_arr, corr, delay
