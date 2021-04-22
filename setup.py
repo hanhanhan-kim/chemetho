@@ -22,10 +22,11 @@ setup(
     ],
     install_requires=[
         "pyyaml",
+        "lxml", # for GC data
         "pandas", 
         "numpy", 
         "scipy", 
-        "pyteomics",
+        "pyteomics", # for GC data
         "bokeh", 
         "colorcet", 
         "cmocean",
