@@ -27,6 +27,7 @@ setup(
         "numpy", 
         "scipy", 
         "pyteomics", # for GC data
+        "peakutils", # for GC data
         "bokeh", 
         "colorcet", 
         "cmocean",
