@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 
 from scipy.signal import find_peaks, peak_widths
+from peakutils import baseline
 
 
 def get_counts_df(df, method="full", do_relative=False):
@@ -47,18 +48,20 @@ def get_counts_df(df, method="full", do_relative=False):
             if do_relative:
 
                 rel_df = pd.DataFrame.from_dict({"mass/charge": low_mz,
-                                                    "retention time (mins)": ret_times, 
-                                                    "relative counts": rel}
-                                                    ).reset_index(drop=True)
+                                                 "retention time (mins)": ret_times, 
+                                                 "relative counts": rel,
+                                                 "baseline counts": baseline(rel)},
+                                                ).reset_index(drop=True)
                 
                 dfs.append(rel_df)
 
             else:
 
                 raw_cnts_df = pd.DataFrame.from_dict({"mass/charge": low_mz,
-                                                    "retention time (mins)": ret_times, 
-                                                    "counts": raw}
-                                                    ).reset_index(drop=True)
+                                                      "retention time (mins)": ret_times, 
+                                                      "counts": raw,
+                                                      "baseline counts": baseline(raw)}
+                                                     ).reset_index(drop=True)
                 
                 dfs.append(raw_cnts_df)
 
@@ -73,10 +76,12 @@ def get_counts_df(df, method="full", do_relative=False):
         if do_relative:
         
             df["relative counts"] = rel
+            df["baseline counts"] = baseline(rel)
 
         else:
 
             df["counts"] = raw
+            df["baseline counts"] = baseline(raw)
         
         return df
 
@@ -84,10 +89,14 @@ def get_counts_df(df, method="full", do_relative=False):
         raise ValueError("The `method` argument must be 'SIM' or 'full'.")
 
 
+# The following functions have only been tested on full spectra data.
+# TODO: Test on SIM data. 
+
 def get_peaks(df, val_col, threshold, width_from_top=0.98):
 
     """
-    
+    Get peak parameters from a GC-MS chromatogram of count data. 
+
     Parameters:
     -----------
     df: A dataframe generated from `get_counts_df()`.
@@ -108,6 +117,7 @@ def get_peaks(df, val_col, threshold, width_from_top=0.98):
         right_times: The right side of the peak width, in retention times.  
         peaks_width_y: The y-axis values for the peak widths. Both the left 
             and right sides of the peak width have the same y-values.
+        area_under_peaks: The areas under the peaks. 
     """
 
     if "retentionTime" not in df:
@@ -130,17 +140,47 @@ def get_peaks(df, val_col, threshold, width_from_top=0.98):
     left_times = df["retentionTime"][left_idxs].values
     right_times = df["retentionTime"][right_idxs].values
     peaks_width_y = widths[1]
-    
+
+    # Get area under peaks:
+    area_under_peaks = []
+    for i,_ in enumerate(peak_idxs):
+        top = data[left_idxs[i]:right_idxs[i]]
+        bottom = df["baseline counts"][left_idxs[i]:right_idxs[i]]
+        x0_to_x1 = df["retentionTime"][left_idxs[i]:right_idxs[i]]
+        area_under_peak = np.trapz(top, x0_to_x1) - np.trapz(bottom, x0_to_x1)
+        area_under_peaks.append(area_under_peak)
+
     return pd.DataFrame.from_dict({"peaks_times": peaks_times, 
                                    "peaks_y": peaks_y,
                                    "left_times": left_times,
                                    "right_times": right_times,
-                                   "peaks_width_y": peaks_width_y})
+                                   "peaks_width_y": peaks_width_y,
+                                   "area_under_peaks": area_under_peaks})
 
 
-def process_gc_ms():
-
+def get_masses_from_peaks(df, conc, idx):
+    
     """
+    Normalize a GC-MS peak calls against the concentration of an 
+    internal standard, like C18. 
+
+    Parameters:
+    -----------
+    df: A dataframe generated from `get_peaks()`.
+    conc (fl): The concentration of the internal standard in mass/volume. 
+        Normalization will be returned in the same mass units. 
+        Concentration is often in ng/uL, e.g. 10 ng/uL.
+    idx (int): The index specifying the internal standard in `df`. 
+    
+    Returns:
+    --------
+    A Pandas dataframe. 
     """
 
-    pass
+    if "area_under_peaks" not in df:
+        raise ValueError("'area_under_peaks' must be a column in `df`")
+
+    mass = df["area_under_peaks"].iloc[idx] / conc
+    df["mass"] = df["area_under_peaks"] / mass
+
+    return df
