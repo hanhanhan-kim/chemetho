@@ -45,6 +45,8 @@ def get_datetime_from_logs(log, acq_mode="online"):
     return datetime_list
 
 
+# TODO: Write smaller functions, so that I don't accept a root path. 
+# Rather, ask for a root path in the main(). 
 def parse_dats(root, ball_radius, acq_mode, do_confirm=True):
 
     """
@@ -168,6 +170,8 @@ def parse_dats(root, ball_radius, acq_mode, do_confirm=True):
     return dfs
 
 
+# TODO: Write smaller functions, so that I don't accept a root path. 
+# Rather, ask for a root path in the main(). 
 def parse_dats_by_group(basepath, group_members, 
                         ball_radius, acq_mode, do_confirm):
     
@@ -196,6 +200,8 @@ def parse_dats_by_group(basepath, group_members,
     return flatten_list(dfs)
 
 
+# TODO: Write smaller functions, so that I don't accept a root path. 
+# Rather, ask for a root path in the main(). 
 def process_dats(basepath, group_members, 
                  ball_radius, acq_mode, do_confirm, 
                  cols_to_filter, order, cutoff_freq): 
