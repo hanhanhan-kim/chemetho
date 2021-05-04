@@ -8,5 +8,6 @@ VERSION = __version__
 from chemetho.common import *
 from chemetho.viz import *
 from chemetho.fictrac import *
+from chemetho.arena import *
 from chemetho.robots import *
 from chemetho.chemistry import *
