@@ -125,3 +125,33 @@ def merge_arena_data(dlc_csv, times_txt, circ_pkl):
     return merged
 
 
+def get_dist(a_x, a_y, b_x, b_y):
+
+    """Get the distance between two Cartesian points, where each coordinate is an argument."""
+
+    return np.sqrt( ((a_x-b_x)**2) + ((a_y-b_y)**2) )
+
+
+def get_speed(df, x_col, y_col, t_col):
+    
+    """
+    Compute the speed from a dataframe with x-coord, y-coord, and time columns.
+    
+    Parameters:
+    -----------
+    df: A Pandas dataframe.
+    x_col (str): The name of the column for the x-coordinate.
+    y_col (str): The name of the column for the y-coordinate.
+    t_col (str): The name of the column for the t-coordinate. 
+    
+    Returns:
+    --------
+    A Pandas series.
+    """
+    
+    if not (x_col in df and y_col in df and t_col in df):
+        raise ValueError(f"All 3 columns ({x_col}, {y_col}, and {t_col}) must be in df")
+    
+    speed = np.sqrt(df[x_col].diff()**2 + df[y_col].diff()**2) / df[t_col].diff() 
+    
+    return speed 
