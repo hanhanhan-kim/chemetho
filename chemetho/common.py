@@ -1,6 +1,7 @@
-from os.path import join, commonpath
+from os.path import join, commonpath, splitext
 from pathlib import Path
 from functools import reduce
+from datetime import datetime
 import dateutil
 
 from pandas.api.types import is_numeric_dtype
@@ -843,3 +844,25 @@ def lag_finder(y1, y2, sr):
     print('y2 is ' + str(delay) + ' behind y1')
     
     return delay_arr, corr, delay
+
+
+def prefix(x):
+    
+    """Get the prefix of a path (str), where the prefix MUST end with 
+    yyyy-mm-dd, and underscores delimit everything else."""
+    
+    date_fmt_str = "%Y-%m-%d"
+    delim = '_'
+
+    parts = splitext(x)[0].split(delim)
+
+    prefix_parts = []
+    for x in parts:
+        try:
+            prefix_parts.append(x)
+            _ = datetime.strptime(x, date_fmt_str)
+            break
+        except ValueError:
+            continue
+
+    return delim.join(prefix_parts)

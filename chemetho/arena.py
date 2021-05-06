@@ -6,6 +6,8 @@ from datetime import datetime
 import pandas as pd
 import numpy as np
 
+from .common import prefix
+
 
 def parse_dlc_csv(csv):
     
@@ -48,28 +50,6 @@ def parse_raspivid_times(txt):
     df["time (s)"] = df["time (s)"] / 1000
     
     return df
-
-
-def prefix(x):
-    
-    """Get the prefix of a path (str), where the prefix MUST end with 
-    yyyy-mm-dd, and underscores delimit everything else."""
-    
-    date_fmt_str = "%Y-%m-%d"
-    delim = '_'
-
-    parts = splitext(x)[0].split(delim)
-
-    prefix_parts = []
-    for x in parts:
-        try:
-            prefix_parts.append(x)
-            _ = datetime.strptime(x, date_fmt_str)
-            break
-        except ValueError:
-            continue
-
-    return delim.join(prefix_parts)
 
 
 def merge_arena_data(dlc_csv, times_txt, circ_pkl):
