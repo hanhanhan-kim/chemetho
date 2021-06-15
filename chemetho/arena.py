@@ -80,7 +80,7 @@ def merge_arena_data(dlc_csv, times_txt, circ_pkl):
     txt_prefix = basename(prefix(times_txt)).strip()
     pkl_prefix = basename(prefix(circ_pkl)).strip()
     
-    if csv_prefix != txt_prefix != circ_pkl:
+    if csv_prefix != txt_prefix != pkl_prefix:
         raise ValueError("The filenames of `dlc_csv`, `times_txt`, and `circ_pkl` " 
                          "suggest they are not from the same experiment. "
                          f"\ndlc_csv prefix: {csv_prefix}"
