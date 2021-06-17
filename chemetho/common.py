@@ -643,7 +643,9 @@ def merge_timeseries(df_1, df_2,
     return final_df
 
 
-# TODO: have this fxn wrap around my merge_timeseries() fxn! 
+# TODO: Maybe have this wrap merge_timeseries() instead? 
+# Otherwise, I could just make a separate merge_n_timeseries() method,
+# but I'm not sure if that'd be redundant. 
 def merge_n_ordered(dfs, on, fill_method, truncate_on=None):
     
     """
@@ -667,7 +669,6 @@ def merge_n_ordered(dfs, on, fill_method, truncate_on=None):
     fxn = lambda left,right: pd.merge_ordered(left,right,on=on, fill_method=fill_method)
     reduced_df = reduce(fxn, dfs)
     
-    # TODO: Here, 'truncate_on' is an argument. By calling merge_timeseries() I'll free up this param, i.e. won't have to do it: 
     if truncate_on is not None:
         return reduced_df.loc[reduced_df[on] <= truncate_on]
     

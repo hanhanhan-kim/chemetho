@@ -137,3 +137,33 @@ def get_speed(df, x_col, y_col, t_col):
     speed = np.sqrt(df[x_col].diff()**2 + df[y_col].diff()**2) / df[t_col].diff() 
     
     return speed 
+
+
+def get_centroid_from_bbox(x1, y1, x2, y2):
+
+    """
+    Compute the centroid of a bounding box. 
+    Recall that in OpenCV, the image origin is the top left corner. 
+    
+    Parameters:
+    -----------
+    x1 (fl): x-coord of top left bounding box corner.
+    y1 (fl): y-coord of top left bounding box corner.
+    x2 (fl): x-coord of bottom right bounding box corner.
+    y2 (fl): y-coord of bottom right bounding box corner. 
+
+    Returns:
+    --------
+    x-coord of centroid and y-coord of centroid
+    """
+    
+    # # Won't work if arguments are Pandas series:
+    # if x2 < x1:
+    #     raise ValueError(f"x1, {x1}, must be less than x2, {x2}")
+    # if y2 < y1:
+    #     raise ValueError(f"y1, {y1}, must be less than y2, {y2}")
+
+    centre_x = (x2 - x1)/2 + x1
+    centre_y = (y2 - y1)/2 + y1
+
+    return centre_x, centre_y
