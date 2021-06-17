@@ -52,15 +52,16 @@ def parse_raspivid_times(txt):
     return df
 
 
-def merge_arena_data(dlc_csv, times_txt, circ_pkl):
+def merge_arena_data(dets_csv, times_txt, circ_pkl):
     
     """
-    Merge DeepLabCut tracking data (.csv), raspivid timestamps (.txt), and 
-    circular arena (.pkl) dimensions, into a single dataframe. 
+    Merge Detectools (Detectron2 Faster R-CNN) tracking data (.csv), 
+    raspivid timestamps (.txt), and circular arena (.pkl) dimensions, 
+    into a single dataframe. 
     
     Parameters:
     -----------
-    dlc_csv (str): Path to .csv output of DeepLabCut tracking results. 
+    dets_csv (str): Path to .csv output of Detectools tracking results. 
     times_txt (str): Path to .txt output of raspivid timestamps. 
     circ_pkl (str): Path to .pkl output of `vidtools find-circle` command. 
     
@@ -69,32 +70,33 @@ def merge_arena_data(dlc_csv, times_txt, circ_pkl):
     A Pandas dataframe. 
     """
     
-    if splitext(dlc_csv)[1] != ".csv":
-        raise ValueError("`dlc_csv` must end in '.csv'")
+    if splitext(dets_csv)[1] != ".csv":
+        raise ValueError("`dets_csv` must end in '.csv'")
     if splitext(times_txt)[1] != ".txt":
         raise ValueError("`times_txt` must end in '.txt'")
     if splitext(circ_pkl)[1] != ".pkl":
         raise ValueError("`circ_pkl` must end in '.pkl'")
     
-    csv_prefix = basename(prefix(dlc_csv)).strip()
+    csv_prefix = basename(prefix(dets_csv)).strip()
     txt_prefix = basename(prefix(times_txt)).strip()
     pkl_prefix = basename(prefix(circ_pkl)).strip()
     
     if csv_prefix != txt_prefix != pkl_prefix:
-        raise ValueError("The filenames of `dlc_csv`, `times_txt`, and `circ_pkl` " 
+        raise ValueError("The filenames of `dets_csv`, `times_txt`, and `circ_pkl` " 
                          "suggest they are not from the same experiment. "
-                         f"\ndlc_csv prefix: {csv_prefix}"
+                         f"\ndets_csv prefix: {csv_prefix}"
                          f"\ntimes_txt prefix: {txt_prefix}"
                          f"\ncirc_pkl prefix: {pkl_prefix}")
     
-    behav = parse_dlc_csv(dlc_csv)
+    behav = pd.read_csv(dets_csv)
     times = parse_raspivid_times(times_txt)
+    times = times.reset_index().rename(columns={"index": "frame"})
     
-    if len(behav) != len(times):
-        raise ValueError("The lengths of `dlc_csv` and `times_txt` do not match.")
+    if len(behav["frame"].unique()) != len(times):
+        raise ValueError("The number of frames in `dets_csv` and `times_txt` do not match.")
     
     # Merge on indexes:
-    merged = pd.merge(behav, times, left_index=True, right_index=True)
+    merged = pd.merge_ordered(behav, times, on="frame")
     
     circ = pickle.load(open(circ_pkl, "rb"))
     
