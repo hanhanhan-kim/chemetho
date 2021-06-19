@@ -167,3 +167,61 @@ def get_centroid_from_bbox(x1, y1, x2, y2):
     centre_y = (y2 - y1)/2 + y1
 
     return centre_x, centre_y
+
+
+def get_intxn_bouts(df, dist_col="dist_bw_animals (mm)", closeness=0.1, window=30):
+    
+    """
+    Get interaction bouts between 2 animals. Assumes that
+    only 2 animals are in the video. Will not capture overlapping 
+    interaction bouts.
+    
+    Parameters:
+    -----------
+    df: An ordered Pandas dataframe, e.g. timeseries, of a single 
+        animal pair. 
+    dist_col (str): The column in `df` that specifies the 
+        distance between the 2 animals.
+    closeness (float): The criterion for defining whether the 
+        animals were close. Is a percentile of the distance 
+        between animals. Must be a value between 0 and 1. 
+    window (int): The number of rows to look at before and after 
+        the animals were close together. 
+        
+    Returns:
+    --------
+    A list of dataframes, where each dataframe is an interaction bout. 
+    """
+    
+    if dist_col not in df:
+        raise ValueError(f"'{dist_col}' is not a column in the dataframe.")
+        
+    if closeness > 1 or closeness < 0:
+        raise ValueError(f"The value for closeness, {closeness}, must be between 0 and 1.")
+    
+    # Set a cutoff for a close interaction:
+    dist_cutoff = np.percentile(df["dist_bw_animals (mm)"].dropna(), 0.1)
+    
+    # Get indices of close interaction instances:
+    dist_crit = df["dist_bw_animals (mm)"] < dist_cutoff
+    idxs = df.loc[dist_crit].index
+
+    # A lot of these idxs are just +1 from the previous idx, which is redundant, because when
+    # I then grab the next e.g. 100 rows, 99 of the rows will have overlapped. 
+    # I need to get only the non-overlapping blocks of rows idxs:
+    window = 30
+    old_idx = 0
+    new_idxs = []
+    for idx in idxs:
+        if idx - old_idx > window:
+            new_idxs.append(idx)
+        old_idx = idx
+
+    # Get moments before and after each episode of closeness:
+    bouts = [df.iloc[idx-window : idx+window] for idx in new_idxs] # list of dfs
+    
+    # Have to readjust time, so it's centred around the interaction point: 
+    for bout in bouts:
+        bout["zeroed_time (s)"] = bout["time (s)"] - bout.iloc[window]["time (s)"]
+    
+    return bouts
