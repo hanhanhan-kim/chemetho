@@ -839,10 +839,10 @@ def lag_finder(y1, y2, sr, show_msg=True):
     n = len(y1)
     
     # Normalize correlation by square root of auto-correlation products
-    corr = sps.correlate(y2, y1, mode='same') / np.sqrt(sps.correlate(y1, y1, mode='same')[int(n/2)] * sps.correlate(y2, y2, mode='same')[int(n/2)])
+    corr = sps.correlate(y1, y2, mode='same') / np.sqrt(sps.correlate(y1, y1, mode='same')[int(n/2)] * sps.correlate(y2, y2, mode='same')[int(n/2)])
 
     t = np.linspace(-0.5*n/sr, 0.5*n/sr, n) # 0.5 is just defining bounds on window
-    delay = t[np.argmax(corr)]
+    delay = t[np.argmax(np.abs(corr))]
     
     if show_msg:
         print('y2 is ' + str(delay) + ' behind y1')
