@@ -200,7 +200,7 @@ def get_intxn_bouts(df, dist_col="dist_bw_animals (mm)", closeness=0.1, window=3
         raise ValueError(f"The value for closeness, {closeness}, must be between 0 and 1.")
     
     # Set a cutoff for a close interaction:
-    dist_cutoff = np.percentile(df["dist_bw_animals (mm)"].dropna(), 0.1)
+    dist_cutoff = np.percentile(df["dist_bw_animals (mm)"].dropna(), closeness)
     
     # Get indices of close interaction instances:
     dist_crit = df["dist_bw_animals (mm)"] < dist_cutoff
