@@ -209,7 +209,6 @@ def get_intxn_bouts(df, dist_col="dist_bw_animals (mm)", closeness=0.1, window=3
     # A lot of these idxs are just +1 from the previous idx, which is redundant, because when
     # I then grab the next e.g. 100 rows, 99 of the rows will have overlapped. 
     # I need to get only the non-overlapping blocks of rows idxs:
-    window = 30
     old_idx = 0
     new_idxs = []
     for idx in idxs:
