@@ -221,6 +221,19 @@ def get_intxn_bouts(df, dist_col="dist_bw_animals (mm)", closeness=0.1, window=3
     
     # Have to readjust time, so it's centred around the interaction point: 
     for bout in bouts:
-        bout["zeroed_time (s)"] = bout["time (s)"] - bout.iloc[window]["time (s)"]
+        # # Have to readjust time, so it's centred around the interaction point,
+        # # where the interaction point is defined as the minimum distance between animals.
+        # dist_argmin = bout["dist_bw_animals (mm)"].argmin()
+        # bout["centred_time (s)"] = bout["time (s)"] - bout.iloc[dist_argmin]["time (s)"]
+        
+        # Have to readjust time, so it's centred around the interaction point,
+        # where the interaction point is defined NOT as the minimum distance between animals,
+        # but once the animals are considered to be 'close'--they can become even closer 
+        # after they're close. I think this definition makes more sense than 
+        # centring around maximum closeness. Sufficient closeness is more biologically relevant. 
+        bout["centred_time (s)"] = bout["time (s)"] - bout.iloc[window]["time (s)"]
+        
+        # Make a time series that resets at 0 each time:
+        bout["zeroed_time (s)"] = bout["time (s)"] - bout["time (s)"].iloc[0]
     
     return bouts
