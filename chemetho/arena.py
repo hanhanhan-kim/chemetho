@@ -1,7 +1,7 @@
 from pathlib import Path
 from os.path import basename, splitext
 import pickle
-from datetime import datetime
+from warnings import warn
 
 import pandas as pd
 import numpy as np
@@ -52,7 +52,7 @@ def parse_raspivid_times(txt):
     return df
 
 
-def merge_arena_data(dets_csv, times_txt, circ_pkl):
+def merge_arena_data(dets_csv, times_txt, circ_pkl, one_idx_frames=False):
     
     """
     Merge Detectools (Detectron2 Faster R-CNN) tracking data (.csv), 
@@ -64,6 +64,10 @@ def merge_arena_data(dets_csv, times_txt, circ_pkl):
     dets_csv (str): Path to .csv output of Detectools tracking results. 
     times_txt (str): Path to .txt output of raspivid timestamps. 
     circ_pkl (str): Path to .pkl output of `vidtools find-circle` command. 
+    one_idx_frames (bool): If the frame counts for the detections begin at 
+        one, set this argument to True. Should be False if using Detectools. 
+        Will be true only if using `vidtools track-blobs` command instead of 
+        Detectools. 
     
     Returns:
     --------
@@ -91,9 +95,14 @@ def merge_arena_data(dets_csv, times_txt, circ_pkl):
     behav = pd.read_csv(dets_csv)
     times = parse_raspivid_times(times_txt)
     times = times.reset_index().rename(columns={"index": "frame"})
+
+    if one_idx_frames:
+        times["frame"] += 1
     
     if len(behav["frame"].unique()) != len(times):
-        raise ValueError("The number of frames in `dets_csv` and `times_txt` do not match.")
+        print(f"Warning for {csv_prefix} data.")
+        warn("The number of frames in `dets_csv` and `times_txt` do not match. "
+             "Perhaps some frames were dropped in the `dets_csv`?")
     
     # Merge on indexes:
     merged = pd.merge_ordered(behav, times, on="frame")
